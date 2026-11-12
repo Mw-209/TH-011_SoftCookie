@@ -10,18 +10,18 @@
 
 ## 1. Architecture and Technology Stack
 
-### 1.1 Architectural Style: Three-Layer Modular Monolith
-The system uses a **Three-Layer Modular Monolith** architecture (`React/Next.js UI` $\rightarrow$ `Next.js REST API & Domain Service Layer` $\rightarrow$ `Prisma ORM & PostgreSQL DB`). This provides a real full-stack workflow with durable relational persistence, clean separation between HTTP transport and domain business rules (`BR-01`–`BR-10`), and single-container Docker packaging for GCP deployment in Lab 5.
+### 1.1 Architectural Style: Three-Layer Modular Client–Server Monorepo
+The system uses a **Three-Layer Modular Client–Server** architecture (`React 18 + Vite UI in client/` $\rightarrow$ `Express REST API & Domain Service Layer in server/` $\rightarrow$ `Prisma ORM & PostgreSQL DB`), matching the Labs 1–4 course stack. This provides clear separation between frontend and backend codebases, clean separation between HTTP transport and domain business rules (`BR-01`–`BR-10`), and single-container or multi-container Docker packaging for GCP deployment in Lab 5.
 
 ```mermaid
 flowchart TB
-    subgraph Client["Presentation Layer (Browser — Desktop / Tablet / Mobile)"]
-        UI["Next.js React UI Pages & SoftCookie Components<br/>(TypeScript + Tailwind CSS)"]
+    subgraph Client["Presentation Layer (client/ — React 18 + Vite — Desktop / Tablet / Mobile)"]
+        UI["React UI Pages & SoftCookie Components<br/>(TypeScript + Tailwind CSS)"]
     end
 
-    subgraph Server["Application & API Layer (Next.js Node.js Runtime)"]
-        API["REST API Route Handlers (/api/*)<br/>Input Trimming, Validation & Safe Error Mapping"]
-        AUTH["Auth & Authorization Guard Layer<br/>(Session Verification, Role & Ownership Checks)"]
+    subgraph Server["Application & API Layer (server/ — Express + Node.js Runtime)"]
+        API["Express REST Route Handlers (/api/*)<br/>Input Trimming, Validation & Safe Error Mapping"]
+        AUTH["Auth & Authorization Middleware<br/>(Session Verification, Role & Ownership Checks)"]
         DOM["Domain Service Layer<br/>(AuthService, EventService, RegistrationService)<br/>Enforces Business Rules BR-01 to BR-10"]
         DAL["Data Access Layer (Prisma Client)<br/>Interactive ACID Transactions & Row Locking"]
     end
@@ -30,7 +30,7 @@ flowchart TB
         PG[("PostgreSQL Database<br/>Tables: users, sessions, events, registrations<br/>Unique, FK & Index Constraints")]
     end
 
-    UI <-->|"HTTPS JSON Fetch + HttpOnly Session Cookie"| API
+    UI <-->|"HTTP JSON Fetch (Vite Proxy /api) + HttpOnly Session Cookie"| API
     API --> AUTH
     AUTH --> DOM
     DOM --> DAL
@@ -41,8 +41,8 @@ flowchart TB
 
 | Area | Selected Technology | Engineering Justification & Responsibilities |
 | :--- | :--- | :--- |
-| **Frontend / UI** | **Next.js (App Router), React 19, TypeScript, Tailwind CSS** | Delivers responsive layouts (`Desktop >= 992px`, `Tablet 768–991px`, `Mobile < 768px`), reusable SoftCookie Warm Bakery components, distinct editable vs. read-only fields, and field-level validation feedback. |
-| **Backend / API & Domain Layer** | **Next.js REST Route Handlers (`src/app/api/**/route.ts`) + Domain Services (`src/services/*.ts`)** | Separates HTTP request/response handling from pure domain logic so business rules (`BR-01`–`BR-10`) can be unit-tested in isolation and integration-tested end-to-end. |
+| **Frontend / UI** | **React 18, Vite, TypeScript, Tailwind CSS (`client/`)** | Consistent with Labs 1–4 stack; delivers responsive layouts (`Desktop >= 992px`, `Tablet 768–991px`, `Mobile < 768px`), reusable SoftCookie Warm Bakery components, distinct editable vs. read-only fields, and field-level validation feedback. |
+| **Backend / API & Domain Layer** | **Express + TypeScript (`server/src/routes/*.ts`, `server/src/services/*.ts`)** | Separates HTTP request/response handling from pure domain logic so business rules (`BR-01`–`BR-10`) can be unit-tested in isolation and integration-tested end-to-end with Supertest. |
 | **Database & ORM** | **PostgreSQL 16 + Prisma ORM (`prisma migrate` & `prisma db seed`)** | Provides relational constraints, foreign keys, composite uniqueness, and row-level locking (`SELECT ... FOR UPDATE`) inside interactive transactions (`NFR-03`). |
 | **Authentication & Security** | **PostgreSQL-backed Sessions (`sessions` table) + `HttpOnly` Cookies + `bcryptjs`** | Hashes passwords with `bcrypt` (`cost = 10`) and validates server-side session tokens on every request, ensuring immediate revocation on logout (`FR-01`, `NFR-01`). |
 | **Automated Testing** | **Vitest (Unit, API/Integration, UI Component) + Playwright (E2E & Multi-Viewport)** | Covers all four required test levels: Unit, API/Database Integration, UI Component/Style, and End-to-End browser journeys across Desktop, Tablet, and Mobile viewports. |
@@ -110,7 +110,7 @@ erDiagram
     }
 ```
 
-### 2.2 Complete Prisma Schema Specification (`prisma/schema.prisma`)
+### 2.2 Complete Prisma Schema Specification (`server/prisma/schema.prisma`)
 
 ```prisma
 enum Role {
@@ -222,9 +222,9 @@ model Registration {
   2. **Decision DB-02 (Pessimistic Row Locking `SELECT ... FOR UPDATE` on `Event`):** Checking `COUNT(*) < event.capacity` in application memory without locking is vulnerable to race conditions when two participants request the last seat simultaneously. By locking the parent `Event` row via `SELECT id, capacity FROM events WHERE id = $1 FOR UPDATE` inside `prisma.$transaction`, competing registration transactions serialize cleanly on the target event without blocking unrelated events (`BR-02`, `NFR-03`).
   3. **Decision DB-03 (PostgreSQL-Backed `Session` Table Instead of Stateless JWTs):** Storing sessions in PostgreSQL (`sessions` table) guarantees that `POST /api/auth/logout` immediately revokes access on the backend (`AC-04`), which stateless JWTs cannot do without a server-side denylist.
 
-### 2.4 Idempotent Seed Data Specification (`prisma/seed.ts`)
-Running `npx prisma db seed` (when `SEED_DEMO_DATA=true`) uses `upsert` on unique keys (`email`, `eventCode`, `registrationNumber`) so it is 100% safe to run repeatedly without creating duplicates:
-* **Credential Safety Rule (Public Repo & Lab 5 Compliance):** Demo passwords are **never hardcoded** in `prisma/seed.ts`, Git, PDFs, or the `/login` UI, and no quick-login shortcut buttons exist. Instead, `prisma/seed.ts` reads `process.env.DEMO_USER_PASSWORD` (provided via local `.env` or GCP Secret Manager) and hashes it with `bcrypt` (cost factor 10). Safe test credentials are handed off privately per course procedure.
+### 2.4 Idempotent Seed Data Specification (`server/prisma/seed.ts`)
+Running `npx --prefix server prisma db seed` (when `SEED_DEMO_DATA=true`) uses `upsert` on unique keys (`email`, `eventCode`, `registrationNumber`) so it is 100% safe to run repeatedly without creating duplicates:
+* **Credential Safety Rule (Public Repo & Lab 5 Compliance):** Demo passwords are **never hardcoded** in `server/prisma/seed.ts`, Git, PDFs, or the `/login` UI, and no quick-login shortcut buttons exist. Instead, `server/prisma/seed.ts` reads `process.env.DEMO_USER_PASSWORD` (provided via local `.env` or GCP Secret Manager) and hashes it with `bcrypt` (cost factor 10). Safe test credentials are handed off privately per course procedure.
 * **Seeded Users:**
   1. `organizer1@university.edu` — `Dr. Somchai Wattana` (`role: ORGANIZER`, `isActive: true`)
   2. `organizer2@university.edu` — `Prof. Nida Srisuk` (`role: ORGANIZER`, `isActive: true`)
@@ -273,9 +273,9 @@ To give the **TH-011_SoftCookie** University Skill-Building Event System a cohes
 | `/login` | Auth Form | `ANONYMOUS` | Initial, Field Validation Error, Submitting (Busy), Invalid Credentials (`401`), Safe API Failure. |
 | `/events` | List / Catalog View | `PARTICIPANT`, `ORGANIZER` | Loading skeleton, Populated Event Cards/Grid, Empty Catalog State, Search/Filter No-Results State (Sprint 3), Safe API Failure. |
 | `/events/new` | Create Mode | `ORGANIZER` (`403` for `PARTICIPANT`) | Initial (with read-only preview of `Organizer` & auto `Event Code`), Field Validation Error, Submitting (Busy), Success Redirect, Forbidden (`403`) View. |
-| `/events/[id]` | Detail View + Action Mode | `PARTICIPANT`, `ORGANIZER` | Loading, Read-Only Event Metadata (`eventCode`, `organizer`, `skillCategory`, `skillHours`, `remainingSeats / capacity`), Participant `"Register Now"` / `"Already Registered"` / `"Event Full"` states, Conflict Error Banner (`409`), Owning Organizer `"View Roster"` link. |
+| `/events/:id` | Detail View + Action Mode | `PARTICIPANT`, `ORGANIZER` | Loading, Read-Only Event Metadata (`eventCode`, `organizer`, `skillCategory`, `skillHours`, `remainingSeats / capacity`), Participant `"Register Now"` / `"Already Registered"` / `"Event Full"` states, Conflict Error Banner (`409`), Owning Organizer `"View Roster"` link. |
 | `/my-registrations` | List View | `PARTICIPANT` (`403` for `ORGANIZER`) | Loading, Populated Registration Table/Cards (`registrationNumber`, `eventCode`, `title`, `status`, `registeredAt`), Empty State (`"You have not registered for any events yet."`), Safe API Failure. |
-| `/organizer/events/[id]/registrations` | Roster / Manage Mode | Owning `ORGANIZER` (`403` for non-owner or `PARTICIPANT`) | Loading, Event Summary Header, Participant Roster Table (`registrationNumber`, `name`, `email`, `status`, `registeredAt`), Empty Roster State, Forbidden (`403`) View. |
+| `/organizer/events/:id/registrations` | Roster / Manage Mode | Owning `ORGANIZER` (`403` for non-owner or `PARTICIPANT`) | Loading, Event Summary Header, Participant Roster Table (`registrationNumber`, `name`, `email`, `status`, `registeredAt`), Empty Roster State, Forbidden (`403`) View. |
 
 ### 3.4 Responsive Viewport Requirements
 
@@ -335,21 +335,22 @@ To give the **TH-011_SoftCookie** University Skill-Building Event System a cohes
 ## 5. Configuration, Environment Variables, and Delivery Design
 
 ### 5.1 Environment Variables (`.env.example`)
-Zero real secrets or demo passwords are committed to Git (Public Repo rule). `.gitignore` excludes `.env`, `node_modules/`, `.next/`, `coverage/`, and `playwright-report/`.
+Zero real secrets or demo passwords are committed to Git (Public Repo rule). `.gitignore` excludes `.env`, `**/.env`, `**/node_modules/`, `**/dist/`, `coverage/`, and `playwright-report/`.
 
 | Variable Name | `.env.example` Default | Description |
 | :--- | :--- | :--- |
 | `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/event_registration_db?schema=public` | PostgreSQL connection URL for Prisma (managed via Secret Manager in GCP). |
 | `SESSION_COOKIE_NAME` | `event_sys_session` | Name of the `HttpOnly` session cookie. |
 | `SESSION_TTL_HOURS` | `24` | Session expiration window in hours. |
-| `SEED_DEMO_DATA` | `true` | Enables/disables idempotent demo user and event seeding in `prisma/seed.ts`. |
-| `DEMO_USER_PASSWORD` | `change-me` | Placeholder in `.env.example`; `seed.ts` reads the actual password from env/Secret Manager rather than hardcoding it. |
+| `SEED_DEMO_DATA` | `true` | Enables/disables idempotent demo user and event seeding in `server/prisma/seed.ts`. |
+| `DEMO_USER_PASSWORD` | `change-me` | Placeholder in `.env.example`; `server/prisma/seed.ts` reads the actual password from env/Secret Manager rather than hardcoding it. |
+| `CORS_ORIGIN` | `http://localhost:5173` | Allowed frontend origin for Express CORS during separated local development. |
 | `NODE_ENV` | `development` | Runtime mode (`development`, `test`, `production`). |
-| `PORT` | `3000` | Application HTTP listening port. |
+| `PORT` | `3000` | Express API listening port (also serves built `client/dist/` in production). |
 
 ### 5.2 Docker and Planned GCP Deployment Architecture (Lab 5 Alignment)
-* **Local Containerization (`Dockerfile`, `.dockerignore` & `docker-compose.yml`):**
-  * `docker-compose.yml` provisions PostgreSQL 16 (`db` with persistent volume `pgdata`) and the Next.js application (`app`), enabling one-command local verification and container restart persistence tests.
+* **Local Containerization (`Dockerfile`, `server/Dockerfile`, `client/Dockerfile`, `.dockerignore` & `docker-compose.yml`):**
+  * `docker-compose.yml` provisions PostgreSQL 16 (`db` with persistent volume `pgdata`) and the containerized Express + React/Vite application (`app`, built from separated `server/` and `client/` modules), enabling one-command local verification and container restart persistence tests.
 * **Lab 5 CI/CD and GCP Deployment Plan (`softcookie-events`):**
   * **GitHub Actions CI Quality Gate (`.github/workflows/ci-docker.yml`):** Defines job `test-and-docker` triggered on `pull_request` targeting `main`, `sprint1-staging`, and `staging`. Executes `npx prisma validate`, `npm run build`, automated tests, and Docker build verification; GitHub Rulesets block merging on failure.
   * **Repeatable GCP Deployment (`.github/workflows/deploy.yml`, `deploy/`, `docs/labs/lab-05/deployment.md`):** Accepted releases on `main` authenticate via **Workload Identity Federation**, push container images to **Google Artifact Registry**, and deploy to **Google Cloud Run** (`softcookie-events`) connected to **Cloud SQL for PostgreSQL 16** with secrets stored in **GCP Secret Manager**. Smoke checks (`deploy/smoke_test.py`) verify both `GET /api/health` and `GET /api/ready`.

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import request from "supertest";
-import { app } from "../src/app.js";
-import { getPrisma } from "../src/prisma.js";
+import { app } from "../../src/app.js";
+import { getPrisma } from "../../src/prisma.js";
 
 describe("TEST-02 [API-01]: Health & Readiness Probes", () => {
   afterEach(() => {

@@ -51,7 +51,7 @@ Build and verify a complete, persistent full-stack vertical slice (`Next.js Reac
 | **AC-16** | `F-04` | **Given** `Organizer 1` is authenticated and owns `Event 1`, **when** `Organizer 1` requests `GET /api/events/:event1Id/registrations` or opens `/organizer/events/[event1Id]/registrations`, **then** `200 OK` is returned and the UI displays the complete registration roster (`registrationNumber`, participant `name`, `email`, `status`, and `registeredAt`). | `TEST-32` (`API-17`), `TEST-35` (`UI-06`), `TEST-37` (`E2E-06`) |
 | **AC-17** | `F-04` | **Given** `Organizer 2` is authenticated and `Event 1` belongs to `Organizer 1`, **when** `Organizer 2` requests `GET /api/events/:event1Id/registrations` or opens `/organizer/events/[event1Id]/registrations`, **then** the backend rejects the request with `403 Forbidden` (`FORBIDDEN_OWNERSHIP`) and zero registration records are returned. | `TEST-33` (`API-18`), `TEST-35` (`UI-06`), `TEST-37` (`E2E-06`) |
 | **AC-18** | `F-04` | **Given** an authenticated `PARTICIPANT` account, **when** the participant requests `GET /api/events/:event1Id/registrations` or opens `/organizer/events/[event1Id]/registrations`, **then** the backend rejects the request with `403 Forbidden` (`FORBIDDEN_ROLE`) and zero registration records are returned. | `TEST-34` (`API-19`), `TEST-37` (`E2E-06`) |
-| **AC-19** | `F-01`–`F-04` | **Given** any Sprint 1 screen, **when** rendered in the browser, **then** all controls follow the Zen Green theme tokens (`#006B3C` primary, `#EEF2F0` read-only fields, `#FFFFFF` editable fields, red `*` required markers, inline field validation, and non-color badges). | `TEST-36` (`UI-07`), `TEST-38` (`E2E-07`) |
+| **AC-19** | `F-01`–`F-04` | **Given** any Sprint 1 screen, **when** rendered in the browser, **then** all controls follow the SoftCookie Warm Bakery theme tokens (`#603928` header, `#A85F34` primary actions, `#D37D30` hover/focus, `#F2B366` warm accents, `#F0F0F0` background & read-only fields, `#FFFFFF` editable fields, red `*` required markers, inline field validation, and non-color badges). | `TEST-36` (`UI-07`), `TEST-38` (`E2E-07`) |
 | **AC-20** | `F-01`–`F-04` | **Given** Desktop ($\ge 992\text{ px}$), Tablet ($768\text{–}991\text{ px}$), and Mobile ($< 768\text{ px}$) viewports, **when** each Sprint 1 screen is inspected, **then** the layout adapts cleanly without clipped labels, overlapping controls, or horizontal page scrolling. | `TEST-38` (`E2E-07`) |
 
 ---
@@ -63,7 +63,7 @@ Every Acceptance Criterion (`AC-01`–`AC-20`) maps to concrete automated tests 
 | Test ID | Type ID | Level | Req / AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :---: | :---: | :---: | :--- | :--- | :--- | :---: |
 | **TEST-01** | `UNIT-01` | Unit | `AC-05`, `NFR-01` | Password hashing & `bcrypt` verification helper | Hashes use `$2a$`/`$2b$` (`cost >= 10`); never plaintext | `tests/unit/password-and-auth.unit.test.ts` | Planned |
-| **TEST-02** | `API-01` | API | `NFR-04` | `GET /api/health` endpoint connectivity | `200 OK` (`< 500 ms`), `{ status: "ok", database: "connected" }` | `tests/api/health.api.test.ts` | Planned |
+| **TEST-02** | `API-01` | API | `NFR-04` | `GET /api/health` (liveness) & `GET /api/ready` (DB readiness) probes | `/api/health` returns `200 { status: "ok" }`; `/api/ready` returns `200 { status: "ready", db: "connected" }` (`503` if DB down), `< 500 ms` | `tests/api/health.api.test.ts` | Planned |
 | **TEST-03** | `API-02` | API | `AC-01`, `NFR-04` | Valid login (`ORGANIZER` & `PARTICIPANT`) | `200 OK` (`< 500 ms`), `HttpOnly` cookie set, DB `Session` saved | `tests/api/auth.api.test.ts` | Planned |
 | **TEST-04** | `API-03` | API | `AC-02`, `NFR-01` | Invalid login (wrong password, unknown email, inactive user, empty input) | `401` / `403` / `400`; zero `Session` rows created | `tests/api/auth.api.test.ts` | Planned |
 | **TEST-05** | `API-04` | API | `AC-03`, `NFR-01` | `GET /api/auth/me` authenticated vs. unauthenticated | `200 OK` with user profile when valid; `401` when missing/invalid | `tests/api/auth.api.test.ts` | Planned |
@@ -97,17 +97,17 @@ Every Acceptance Criterion (`AC-01`–`AC-20`) maps to concrete automated tests 
 | **TEST-33** | `API-18` | API | `AC-17`, `BR-05` | Non-owner `organizer2` requests `GET /api/events/:event1Id/registrations` (**TDD #4b**) | `403 Forbidden` (`FORBIDDEN_OWNERSHIP`); no roster returned | `tests/api/organizer-roster.api.test.ts` | Planned |
 | **TEST-34** | `API-19` | API | `AC-18`, `BR-04` | `student1` (`PARTICIPANT`) requests `GET /api/events/:event1Id/registrations` | `403 Forbidden` (`FORBIDDEN_ROLE`); no roster returned | `tests/api/organizer-roster.api.test.ts` | Planned |
 | **TEST-35** | `UI-06` | UI | `AC-16`, `AC-17` | `OrganizerRoster` populated table, empty roster, and `403` state | Renders roster rows, empty message, or `403` alert accurately | `tests/ui/OrganizerRoster.test.tsx` | Planned |
-| **TEST-36** | `UI-07` | UI Style | `AC-19`, `NFR-05` | Zen Green theme token, read-only shading, asterisk (`*`) & badge checks | Confirms `#006B3C` primary, `#EEF2F0` read-only, and text badges | `tests/ui/ResponsiveAndTheme.test.tsx` | Planned |
+| **TEST-36** | `UI-07` | UI Style | `AC-19`, `NFR-05` | SoftCookie Warm Bakery theme token, read-only shading, asterisk (`*`) & badge checks | Confirms `#603928` header, `#A85F34` primary, `#F0F0F0` read-only, and text badges | `tests/ui/ResponsiveAndTheme.test.tsx` | Planned |
 | **TEST-37** | `E2E-06` | E2E | `AC-16`–`AC-18` | `organizer1` inspects owned roster (`200`); `organizer2` & `student1` blocked (`403`) | Owner sees roster; non-owner organizer & participant see `403` | `e2e/sprint-1/auth-and-access.spec.ts` | Planned |
 | **TEST-38** | `E2E-07` | E2E | `AC-19`, `AC-20` | Multi-viewport check at Desktop (`1280px`), Tablet (`820px`), Mobile (`375px`) | Zero horizontal overflow, no clipped labels, usable controls | `e2e/sprint-1/responsive-and-states.spec.ts` | Planned |
 
 ---
 
-## 4. Responsive and Visual Inspection Checklist (Zen Green UI)
+## 4. Responsive and Visual Inspection Checklist (SoftCookie Warm Bakery UI)
 
 Before declaring Sprint 1 complete, every screen must pass this visual and responsive checklist:
-- [ ] **Color Tokens:** App header and primary buttons use `#006B3C` (hover `#0B7A46`), page background uses `#F5F7F6`, cards use `#FFFFFF`, and selected/success badges use `#EAF6EF`.
-- [ ] **Editable vs. Read-Only Controls:** Editable inputs have `#FFFFFF` background with neutral borders; system-generated/read-only fields (`Event Code`, `Registration No.`, `Organizer`, `Remaining Seats`) use distinct `#EEF2F0` shading.
+- [ ] **Color Tokens:** App header uses `#603928`, primary action buttons use `#A85F34` (hover `#D37D30`), warm highlights use `#F2B366`, page background uses `#F0F0F0`, cards use `#FFFFFF`, and success badges use `#EAF6EF` (`#065F46` text).
+- [ ] **Editable vs. Read-Only Controls:** Editable inputs have `#FFFFFF` background with `#C4B5AB` borders; system-generated/read-only fields (`Event Code`, `Registration No.`, `Organizer`, `Remaining Seats`) use distinct `#F0F0F0` shading.
 - [ ] **Labels, Asterisks, and Inline Validation:** Labels appear above controls; required fields display a red asterisk (`*`); validation messages render immediately below the associated field in `#B91C1C`.
 - [ ] **Busy Submit State & Data Retention:** Submit buttons disable and show busy text while requests are in flight; form inputs retain user-typed values after validation or API errors.
 - [ ] **Desktop ($\ge 992\text{ px}$), Tablet ($768\text{–}991\text{ px}$), and Mobile ($< 768\text{ px}$):** No clipped text, overlapping badges, hidden action buttons, or horizontal page scrolling at any viewport size.

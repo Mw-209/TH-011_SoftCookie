@@ -19,7 +19,7 @@ Participants must be able to claim a seat in an open workshop, receive an offici
 * **Included:**
   * Participant registration creation (`POST /api/events/:id/registrations`) using a row-locked PostgreSQL transaction (`SELECT ... FOR UPDATE`) to enforce `BR-02` (capacity) and `BR-03` (duplicate prevention) and generate `registrationNumber` (`REG-YYYY-NNNN`).
   * Participant personal registration list (`GET /api/registrations/my`) and owned registration detail (`GET /api/registrations/:id`) enforcing `registration.participantId === currentUser.id` (`BR-05`).
-  * Zen Green registration action panel on `/events/[id]` and `My Registrations` screen (`/my-registrations`).
+  * SoftCookie Warm Bakery registration action panel on `/events/[id]` and `My Registrations` screen (`/my-registrations`).
 * **Explicitly Excluded:**
   * Participant self-cancellation and re-registration after cancellation (`F-06` in Sprint 2).
 
@@ -33,10 +33,10 @@ Participants must be able to claim a seat in an open workshop, receive an offici
 
 ## 5. UI Specification Summary (`/events/[id]` Registration Panel & `/my-registrations`)
 * **Event Detail Registration Panel (`/events/[id]`):**
-  * Shows read-only `Event Code`, `Capacity`, `Registered`, and `Remaining Seats` in `#EEF2F0` shaded boxes.
+  * Shows read-only `Event Code`, `Capacity`, `Registered`, and `Remaining Seats` in `#F0F0F0` shaded boxes.
   * When logged in as `PARTICIPANT`:
-    * **Eligible State:** Primary green `#006B3C` button `"Register for Event"`. While submitting, button disables and displays `"Registering..."`.
-    * **Success State:** Displays pale green (`#EAF6EF`) confirmation banner showing official `registrationNumber` (`REG-2026-NNNN`), status badge `REGISTERED`, and link `"View in My Registrations"`.
+    * **Eligible State:** Primary Roasted Caramel `#A85F34` (hover `#D37D30`) button `"Register for Event"`. While submitting, button disables and displays `"Registering..."`.
+    * **Success State:** Displays confirmation banner (`#EAF6EF` bg / `#065F46` text) showing official `registrationNumber` (`REG-2026-NNNN`), status badge `REGISTERED`, and link `"View in My Registrations"`.
     * **Already Registered State:** Shows `REGISTERED` badge (`#EAF6EF`) with `registrationNumber` and disables duplicate submission in UI (while backend still enforces `409 DUPLICATE_REGISTRATION` on direct API calls).
     * **Full Capacity / Conflict State:** Shows amber badge `"Event Full (0 seats left)"` or red error alert banner (`role="alert"`) if a concurrent request claims the last seat first (`409 EVENT_FULL`).
 * **`/my-registrations` Screen (`PARTICIPANT` Only):**

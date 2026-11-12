@@ -16,7 +16,7 @@ The system uses a **Three-Layer Modular Monolith** architecture (`React/Next.js 
 ```mermaid
 flowchart TB
     subgraph Client["Presentation Layer (Browser — Desktop / Tablet / Mobile)"]
-        UI["Next.js React UI Pages & Zen Green Components<br/>(TypeScript + Tailwind CSS)"]
+        UI["Next.js React UI Pages & SoftCookie Components<br/>(TypeScript + Tailwind CSS)"]
     end
 
     subgraph Server["Application & API Layer (Next.js Node.js Runtime)"]
@@ -41,7 +41,7 @@ flowchart TB
 
 | Area | Selected Technology | Engineering Justification & Responsibilities |
 | :--- | :--- | :--- |
-| **Frontend / UI** | **Next.js (App Router), React 19, TypeScript, Tailwind CSS** | Delivers responsive layouts (`Desktop >= 992px`, `Tablet 768–991px`, `Mobile < 768px`), reusable Zen Green components, distinct editable vs. read-only fields, and field-level validation feedback. |
+| **Frontend / UI** | **Next.js (App Router), React 19, TypeScript, Tailwind CSS** | Delivers responsive layouts (`Desktop >= 992px`, `Tablet 768–991px`, `Mobile < 768px`), reusable SoftCookie Warm Bakery components, distinct editable vs. read-only fields, and field-level validation feedback. |
 | **Backend / API & Domain Layer** | **Next.js REST Route Handlers (`src/app/api/**/route.ts`) + Domain Services (`src/services/*.ts`)** | Separates HTTP request/response handling from pure domain logic so business rules (`BR-01`–`BR-10`) can be unit-tested in isolation and integration-tested end-to-end. |
 | **Database & ORM** | **PostgreSQL 16 + Prisma ORM (`prisma migrate` & `prisma db seed`)** | Provides relational constraints, foreign keys, composite uniqueness, and row-level locking (`SELECT ... FOR UPDATE`) inside interactive transactions (`NFR-03`). |
 | **Authentication & Security** | **PostgreSQL-backed Sessions (`sessions` table) + `HttpOnly` Cookies + `bcryptjs`** | Hashes passwords with `bcrypt` (`cost = 10`) and validates server-side session tokens on every request, ensuring immediate revocation on logout (`FR-01`, `NFR-01`). |
@@ -223,8 +223,9 @@ model Registration {
   3. **Decision DB-03 (PostgreSQL-Backed `Session` Table Instead of Stateless JWTs):** Storing sessions in PostgreSQL (`sessions` table) guarantees that `POST /api/auth/logout` immediately revokes access on the backend (`AC-04`), which stateless JWTs cannot do without a server-side denylist.
 
 ### 2.4 Idempotent Seed Data Specification (`prisma/seed.ts`)
-Running `npx prisma db seed` uses `upsert` on unique keys (`email`, `eventCode`, `registrationNumber`) so it is 100% safe to run repeatedly without creating duplicates:
-* **Seeded Users (All active demo accounts use password `Password123!` hashed with `bcrypt` cost 10):**
+Running `npx prisma db seed` (when `SEED_DEMO_DATA=true`) uses `upsert` on unique keys (`email`, `eventCode`, `registrationNumber`) so it is 100% safe to run repeatedly without creating duplicates:
+* **Credential Safety Rule (Public Repo & Lab 5 Compliance):** Demo passwords are **never hardcoded** in `prisma/seed.ts`, Git, PDFs, or the `/login` UI, and no quick-login shortcut buttons exist. Instead, `prisma/seed.ts` reads `process.env.DEMO_USER_PASSWORD` (provided via local `.env` or GCP Secret Manager) and hashes it with `bcrypt` (cost factor 10). Safe test credentials are handed off privately per course procedure.
+* **Seeded Users:**
   1. `organizer1@university.edu` — `Dr. Somchai Wattana` (`role: ORGANIZER`, `isActive: true`)
   2. `organizer2@university.edu` — `Prof. Nida Srisuk` (`role: ORGANIZER`, `isActive: true`)
   3. `student1@university.edu` — `Kittipong Jaidee` (`role: PARTICIPANT`, `isActive: true`)
@@ -238,24 +239,24 @@ Running `npx prisma db seed` uses `upsert` on unique keys (`email`, `eventCode`,
 
 ---
 
-## 3. Zen Green UI Specification, Component Rules, and Responsive Behavior
+## 3. SoftCookie Warm Bakery UI Specification, Component Rules, and Responsive Behavior
 
-To maintain visual consistency across all sprints and labs (following the CPE 334 **Zen Green Theme** specification), all screens adhere to the following design system:
+To give the **TH-011_SoftCookie** University Skill-Building Event System a cohesive, accessible visual identity, all screens adhere to the **SoftCookie Warm Bakery Theme** design tokens:
 
 ### 3.1 Color Tokens and Intended Usage
 
 | Token / Element | Required Hex / Style | Intended Usage |
 | :--- | :--- | :--- |
-| **Primary Green** | `#006B3C` | Top application header bar, primary action buttons (`Sign In`, `Publish Event`, `Register Now`), and strong emphasis. |
-| **Secondary Green** | `#0B7A46` | Active navigation tabs, focus rings, interactive links, and primary button hover states. |
-| **Pale Green** | `#EAF6EF` | Selected cards, success banners, `REGISTERED` / `ATTENDED` badges, and subtle section headers. |
-| **Page Background** | `#F5F7F6` | Quiet near-white page canvas background across all screens. |
-| **Surface / Cards** | `#FFFFFF` | Event cards, form containers, and roster tables with subtle border (`#D1DDD7`) and restrained shadow. |
-| **Primary Text** | `#1C2B24` | Dark charcoal-green text for comfortable reading contrast. |
-| **Editable Field** | `#FFFFFF` bg + `#B8C9BF` border | User-editable `<input>`, `<select>`, and `<textarea>` controls with visible `#0B7A46` focus outline. |
-| **Read-Only Field** | `#EEF2F0` bg + `#D1DDD7` border | Soft gray-green shading for system-generated/read-only values (`Event Code`, `Registration Number`, `Organizer`, `Remaining Seats`). |
+| **Deep Cocoa (Primary Dark)** | `#603928` | Top application header bar, primary headings, and high-contrast primary text. |
+| **Roasted Caramel (Primary Action)** | `#A85F34` | Primary action buttons (`Sign In`, `Publish Event`, `Register Now`) and active navigation tabs. |
+| **Cookie Amber (Interactive / Hover)** | `#D37D30` | Primary button hover states, focus outlines, and interactive links. |
+| **Warm Biscuit (Accent Highlight)** | `#F2B366` | Soft accent borders, selected card highlights, and warm callout badges (paired with `#603928` text for readability). |
+| **Milk Cream (Page Background)** | `#F0F0F0` | Quiet off-white page canvas background across all screens. |
+| **Surface / Cards** | `#FFFFFF` | Event cards, form containers, and roster tables with subtle warm border (`#E0D8D2`) and restrained shadow. |
+| **Editable Field** | `#FFFFFF` bg + `#C4B5AB` border | User-editable `<input>`, `<select>`, and `<textarea>` controls with visible `#D37D30` focus outline. |
+| **Read-Only Field** | `#F0F0F0` bg + `#D6CCC5` border | Distinct Milk Cream shading for system-generated/read-only values (`Event Code`, `Registration Number`, `Organizer`, `Remaining Seats`). |
 | **Error State** | `#B91C1C` text & border + `#FEF2F2` bg | Field-level validation messages placed immediately below the invalid field, plus API failure banners. |
-| **Warning / Full Badge** | `#B45309` text + `#FEF3C7` bg | `Event Full (0 seats)` badge, `CANCELLED` badge, or deadline warning callouts. |
+| **Warning / Full Badge** | `#9A3412` text + `#FEF3C7` bg | `Event Full (0 seats)` badge, `CANCELLED` badge, or deadline warning callouts. |
 | **Success State** | `#065F46` text + `#EAF6EF` bg | Confirmation banner with icon + text (never relying on color alone) displaying generated `eventCode` or `registrationNumber`. |
 
 ### 3.2 Reusable Component and Accessibility Rules
@@ -292,7 +293,8 @@ To maintain visual consistency across all sprints and labs (following the CPE 33
 
 | Method & Path | Purpose | Auth & Role Required | Success Status | Error Statuses | Sprint |
 | :--- | :--- | :--- | :---: | :--- | :---: |
-| `GET /api/health` | System & PostgreSQL connectivity health check | Public (`ANONYMOUS`) | `200 OK` | `503 Service Unavailable` | Sprint 1 |
+| `GET /api/health` | Application liveness probe (`{ status: "ok" }`) | Public (`ANONYMOUS`) | `200 OK` | `500` | Sprint 1 |
+| `GET /api/ready` | Database readiness probe executing `SELECT 1` (`{ status: "ready", db: "connected" }`) | Public (`ANONYMOUS`) | `200 OK` | `503 Service Unavailable` (`{ status: "not_ready" }`) | Sprint 1 |
 | `POST /api/auth/login` | Authenticate user credentials & set `HttpOnly` session cookie | Public (`ANONYMOUS`) | `200 OK` | `400`, `401`, `403` (inactive), `500` | Sprint 1 |
 | `POST /api/auth/logout` | Revoke session in PostgreSQL & clear session cookie | Authenticated (`ANY`) | `200 OK` | `401`, `500` | Sprint 1 |
 | `GET /api/auth/me` | Retrieve current authenticated user profile & role | Authenticated (`ANY`) | `200 OK` | `401`, `500` | Sprint 1 |
@@ -314,7 +316,7 @@ To maintain visual consistency across all sprints and labs (following the CPE 33
 
 | Operation / Endpoint | `ANONYMOUS` | `PARTICIPANT` (Owner of Reg) | `PARTICIPANT` (Other User's Reg) | `ORGANIZER` (Owner of Event) | `ORGANIZER` (Other Organizer's Event) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `GET /api/health` | `200 OK` | `200 OK` | `200 OK` | `200 OK` | `200 OK` |
+| `GET /api/health` & `GET /api/ready` | `200 OK` | `200 OK` | `200 OK` | `200 OK` | `200 OK` |
 | `POST /api/auth/login` | `200 OK` | `200 OK` | `200 OK` | `200 OK` | `200 OK` |
 | `GET /api/auth/me` & `POST /api/auth/logout` | `401` | `200 OK` | `200 OK` | `200 OK` | `200 OK` |
 | `GET /api/events` & `GET /api/events/:id` | `401` | `200 OK` | `200 OK` | `200 OK` | `200 OK` |
@@ -333,19 +335,21 @@ To maintain visual consistency across all sprints and labs (following the CPE 33
 ## 5. Configuration, Environment Variables, and Delivery Design
 
 ### 5.1 Environment Variables (`.env.example`)
-Zero real secrets or credentials are committed to Git. `.gitignore` excludes `.env`, `node_modules/`, `.next/`, `coverage/`, and `playwright-report/`.
+Zero real secrets or demo passwords are committed to Git (Public Repo rule). `.gitignore` excludes `.env`, `node_modules/`, `.next/`, `coverage/`, and `playwright-report/`.
 
 | Variable Name | `.env.example` Default | Description |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/event_registration_db?schema=public` | PostgreSQL connection URL for Prisma. |
+| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/event_registration_db?schema=public` | PostgreSQL connection URL for Prisma (managed via Secret Manager in GCP). |
 | `SESSION_COOKIE_NAME` | `event_sys_session` | Name of the `HttpOnly` session cookie. |
 | `SESSION_TTL_HOURS` | `24` | Session expiration window in hours. |
+| `SEED_DEMO_DATA` | `true` | Enables/disables idempotent demo user and event seeding in `prisma/seed.ts`. |
+| `DEMO_USER_PASSWORD` | `change-me` | Placeholder in `.env.example`; `seed.ts` reads the actual password from env/Secret Manager rather than hardcoding it. |
 | `NODE_ENV` | `development` | Runtime mode (`development`, `test`, `production`). |
 | `PORT` | `3000` | Application HTTP listening port. |
 
-### 5.2 Docker and Planned GCP Deployment Architecture
-* **Local Containerization (`Dockerfile` & `docker-compose.yml`):**
+### 5.2 Docker and Planned GCP Deployment Architecture (Lab 5 Alignment)
+* **Local Containerization (`Dockerfile`, `.dockerignore` & `docker-compose.yml`):**
   * `docker-compose.yml` provisions PostgreSQL 16 (`db` with persistent volume `pgdata`) and the Next.js application (`app`), enabling one-command local verification and container restart persistence tests.
-* **Lab 5 CI/CD and GCP Deployment Plan:**
-  * **GitHub Actions CI Quality Gate:** Runs `npx prisma validate`, `npm run build`, Vitest unit/API/UI tests, and Playwright E2E tests on every Pull Request into `sprint-staging` and `main`. A failing check blocks merging.
-  * **GCP Cloud Run + Cloud SQL for PostgreSQL:** Accepted releases on `main` build a production Docker image pushed to **Google Artifact Registry** and deploy to **Google Cloud Run** connected to **Cloud SQL for PostgreSQL** with secrets managed via environment configuration.
+* **Lab 5 CI/CD and GCP Deployment Plan (`softcookie-events`):**
+  * **GitHub Actions CI Quality Gate (`.github/workflows/ci-docker.yml`):** Defines job `test-and-docker` triggered on `pull_request` targeting `main`, `sprint1-staging`, and `staging`. Executes `npx prisma validate`, `npm run build`, automated tests, and Docker build verification; GitHub Rulesets block merging on failure.
+  * **Repeatable GCP Deployment (`.github/workflows/deploy.yml`, `deploy/`, `docs/labs/lab-05/deployment.md`):** Accepted releases on `main` authenticate via **Workload Identity Federation**, push container images to **Google Artifact Registry**, and deploy to **Google Cloud Run** (`softcookie-events`) connected to **Cloud SQL for PostgreSQL 16** with secrets stored in **GCP Secret Manager**. Smoke checks (`deploy/smoke_test.py`) verify both `GET /api/health` and `GET /api/ready`.

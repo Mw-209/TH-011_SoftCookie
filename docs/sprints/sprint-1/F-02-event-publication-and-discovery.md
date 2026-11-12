@@ -19,7 +19,7 @@ Organizers need a structured, validated screen to publish skill-building worksho
 * **Included:**
   * Backend event creation (`POST /api/events`) with `ORGANIZER` role enforcement (`BR-04`), input trimming/validation (`BR-01`), and automatic generation of unique `eventCode` (`EVT-YYYY-NNNN`).
   * Published event list retrieval (`GET /api/events`) and single event detail retrieval (`GET /api/events/:id`) with server-computed `activeRegistrationsCount` and `remainingSeats`.
-  * Zen Green Event Catalog screen (`/events`), Create Event screen (`/events/new`), and Event Detail screen (`/events/[id]`).
+  * SoftCookie Warm Bakery Event Catalog screen (`/events`), Create Event screen (`/events/new`), and Event Detail screen (`/events/[id]`).
 * **Explicitly Excluded:**
   * Updating capacity/deadlines after creation (`F-05` in Sprint 2) and search/category filter query controls (`F-08` in Sprint 3).
 
@@ -31,13 +31,13 @@ Organizers need a structured, validated screen to publish skill-building worksho
 
 ## 5. UI Specification Summary (`/events`, `/events/new`, `/events/[id]`)
 * **`/events/new` (Create Event Mode — `ORGANIZER` Only):**
-  * **Read-Only Header Group (`#EEF2F0` shading):** `Event Code` (`"Auto-generated on save (EVT-2026-XXXX)"`) and `Organizer` (current user's name & email).
+  * **Read-Only Header Group (`#F0F0F0` shading):** `Event Code` (`"Auto-generated on save (EVT-2026-XXXX)"`) and `Organizer` (current user's name & email).
   * **Editable Fields (`#FFFFFF` bg, required red asterisk `*`):**
     * `Event Title *` ($5\text{–}120$ chars), `Skill Category *` (`TECHNICAL`, `DATA_AI`, `COMMUNICATION`, `CAREER`), `Skill Hours *` (integer $1\text{–}40$), `Capacity (Seats) *` (integer $1\text{–}1000$), `Location *` ($3\text{–}150$ chars), `Registration Deadline *`, `Start Date/Time *`, `End Date/Time *`, and `Description *` (multiline textarea, $10\text{–}2000$ chars).
-  * **States:** Field-level validation messages appear directly below invalid controls; Submit button shows `"Publishing..."` and disables while submitting; form values are preserved if an error occurs; success redirects to `/events/[id]` and shows a pale-green confirmation banner with the generated `eventCode`.
+  * **States:** Field-level validation messages appear directly below invalid controls; Submit button shows `"Publishing..."` and disables while submitting; form values are preserved if an error occurs; success redirects to `/events/[id]` and shows a success confirmation banner (`#EAF6EF` / `#065F46`) with the generated `eventCode`.
   * **Role Restriction State:** If a `PARTICIPANT` opens `/events/new`, renders a `403 Access Denied` card.
 * **`/events` (Event Discovery Catalog) & `/events/[id]` (Event Detail View):**
-  * Displays `eventCode`, `title`, `skillCategory` badge, `skillHours` badge, `location`, schedule, `registrationDeadline`, `organizerName`, and seat badge (`"remainingSeats / capacity seats available"` in pale green `#EAF6EF`, or `"Full (0 / capacity)"` in amber `#FEF3C7`).
+  * Displays `eventCode`, `title`, `skillCategory` badge, `skillHours` badge, `location`, schedule, `registrationDeadline`, `organizerName`, and seat badge (`"remainingSeats / capacity seats available"` in `#EAF6EF` / `#065F46`, or `"Full (0 / capacity)"` in warm biscuit/amber `#FEF3C7` / `#9A3412`).
   * Shows loading state while fetching, empty-catalog state if zero events exist, and safe API-failure banner if the backend is unreachable.
 
 ## 6. Data Changes
@@ -126,6 +126,6 @@ Organizers need a structured, validated screen to publish skill-building worksho
 ## 10. Feature Definition of Done
 - [ ] `Event` model migrated to PostgreSQL and seeded with 3 reproducible events (`EVT-2026-0001` to `0003`).
 - [ ] Unit validation tests (`TEST-11` / `UNIT-03`) written first (TDD Red $\rightarrow$ Green).
-- [ ] `POST /api/events`, `GET /api/events`, `GET /api/events/:id` and Zen Green UI screens (`/events`, `/events/new`, `/events/[id]`) implemented.
+- [ ] `POST /api/events`, `GET /api/events`, `GET /api/events/:id` and SoftCookie Warm Bakery UI screens (`/events`, `/events/new`, `/events/[id]`) implemented.
 - [ ] All planned automated tests (`TEST-10`–`TEST-19`) passing.
 - [ ] Peer-reviewed PR merged into `sprint1-staging`.

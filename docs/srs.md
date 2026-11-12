@@ -9,10 +9,10 @@
 
 | Team Member | Student ID | GitHub Username | Role / Participation |
 | :--- | :--- | :--- | :--- |
-| `[Kusumas Kerdbankram]` | `[67070505209]` | `[Mw-209]` | Co-Engineer (Specification, UI/API/DB Design, Testing, Implementation, Peer Review) |
-| `[Thitikan Tiranobpakan]` | `[67070505213]` | `[thitikan48]` | Co-Engineer (Specification, UI/API/DB Design, Testing, Implementation, Peer Review) |
+| Kusumas Kerdbankram | 67070505209 | `Mw-209` | Co-Engineer (Specification, UI/API/DB Design, Testing, Implementation, Peer Review) |
+| Thitikan Tiranobpakan | 67070505213 | `thitikan48` | Co-Engineer (Specification, UI/API/DB Design, Testing, Implementation, Peer Review) |
 
-**Repository URL:** `[https://github.com/Mw-209/TH-011_SoftCookie.git]`
+**Repository URL:** https://github.com/Mw-209/TH-011_SoftCookie.git
 
 ---
 
@@ -40,7 +40,7 @@ Each user account holds exactly one role (`PARTICIPANT` or `ORGANIZER`). The aut
 | :--- | :--- | :--- |
 | **Participant** (`PARTICIPANT`) | University student or staff member attending skill-building workshops. | **Permitted:**<br>- Authenticate via email/password and log out.<br>- Browse, search, and filter published skill-building events and view real-time remaining seats.<br>- Register for an open event with available capacity (at most one active registration per event).<br>- View their own registrations (`My Registrations`) and open their own registration detail.<br>- Cancel their own active (`REGISTERED`) registration before the event's registration deadline.<br>**Forbidden (`403 Forbidden`):**<br>- Cannot create, edit, or publish events.<br>- Cannot view an event's participant roster or attendance summary.<br>- Cannot view, cancel, or modify another participant's registration record. |
 | **Organizer** (`ORGANIZER`) | Faculty coordinator, club leader, or staff member who hosts skill-building workshops. | **Permitted:**<br>- Authenticate via email/password and log out.<br>- Create and publish skill-building events with positive capacity, skill category, skill hours, schedule, and registration deadline.<br>- Browse published events.<br>- View the participant registration roster for **their own** events (`event.organizerId === currentUser.id`).<br>- Update capacity and registration deadline for **their own** events within business rules.<br>- Record participant check-in (`REGISTERED` $\rightarrow$ `ATTENDED`) for **their own** events.<br>- View attendance and skill-hour summary reports for **their own** events.<br>**Forbidden (`403 Forbidden`):**<br>- Cannot view rosters, edit settings, record check-in, or view reports for events owned by another Organizer.<br>- Cannot submit participant registrations using an Organizer account. |
-| **Unauthenticated Visitor** (`ANONYMOUS`) | Any client without a valid, active server session. | **Permitted:**<br>- Access `/login`, submit credentials to `POST /api/auth/login`, and check `GET /api/health`.<br>**Forbidden (`401 Unauthorized`):**<br>- Cannot access any protected screen or protected `/api/*` endpoint. |
+| **Unauthenticated Visitor** (`ANONYMOUS`) | Any client without a valid, active server session. | **Permitted:**<br>- Access `/login`, submit credentials to `POST /api/auth/login`, and check `GET /api/health` and `GET /api/ready`.<br>**Forbidden (`401 Unauthorized`):**<br>- Cannot access any protected screen or protected `/api/*` endpoint. |
 
 ---
 
@@ -139,10 +139,10 @@ In accordance with CPE 334 Spec-Driven Development standards, every user-facing 
 
 | NFR ID | Category | Measurable Target | Practical Verification Method | Target Sprint |
 | :--- | :--- | :--- | :--- | :---: |
-| **NFR-01** | Authentication & Credential Security | 100% of stored user passwords use `bcrypt` (cost factor $\ge 10$); `0` API responses expose `passwordHash`; 100% of unauthenticated requests to protected `/api/*` endpoints return `401 Unauthorized`. | Automated Unit & API Integration Tests (`UNIT-01`, `API-01`–`API-04`) inspecting PostgreSQL rows, cookies, and JSON payloads. | Sprint 1 |
-| **NFR-02** | Backend Authorization & Ownership Protection | 100% of protected endpoints enforce role and ownership rules on the server; 100% of cross-role, cross-organizer, and cross-participant access attempts return `403 Forbidden` with zero private data returned. | Automated API Integration & E2E Tests (`API-07`, `API-12`, `API-14`–`API-17`, `E2E-03`, `E2E-06`). | Sprint 1 (and Regression in Sprints 2–3) |
-| **NFR-03** | Transactional Persistence & Concurrency Safety | 100% of committed records survive server/container restarts; under simultaneous competing requests for the last remaining seat (`capacity = 1`), persisted active registrations never exceed `capacity` ($\text{activeCount} \le \text{capacity}$). | Automated Concurrency Race Integration Test (`API-11`) firing parallel requests via `Promise.all`, plus container restart test in Lab 5. | Sprint 1 & Lab 5 |
-| **NFR-04** | API Responsiveness | Core API endpoints (`GET /api/health`, `POST /api/auth/login`, `GET /api/events`, `POST /api/events`, `POST /api/events/:id/registrations`) complete within $< 500\text{ ms}$ per request on the local/containerized PostgreSQL test environment. | Automated API test duration assertions (`durationMs < 500`). | Sprint 1 & Sprint 3 |
+| **NFR-01** | Authentication & Credential Security | 100% of stored user passwords use `bcrypt` (cost factor $\ge 10$); `0` API responses expose `passwordHash`; 100% of unauthenticated requests to protected `/api/*` endpoints return `401 Unauthorized`. | Automated Unit & API Integration Tests (`UNIT-01`, `API-02`–`API-05`) inspecting PostgreSQL rows, cookies, and JSON payloads. | Sprint 1 |
+| **NFR-02** | Backend Authorization & Ownership Protection | 100% of protected endpoints enforce role and ownership rules on the server; 100% of cross-role, cross-organizer, and cross-participant access attempts return `403 Forbidden` with zero private data returned. | Automated API Integration & E2E Tests (`API-08`, `API-14`, `API-16`, `API-18`, `API-19`, `E2E-03`, `E2E-06`). | Sprint 1 (and Regression in Sprints 2–3) |
+| **NFR-03** | Transactional Persistence & Concurrency Safety | 100% of committed records survive server/container restarts; under simultaneous competing requests for the last remaining seat (`capacity = 1`), persisted active registrations never exceed `capacity` ($\text{activeCount} \le \text{capacity}$). | Automated Concurrency Race Integration Test (`API-13`) firing parallel requests via `Promise.all`, plus container restart test in Lab 5. | Sprint 1 & Lab 5 |
+| **NFR-04** | API Responsiveness | Core API endpoints (`GET /api/health`, `GET /api/ready`, `POST /api/auth/login`, `GET /api/events`, `POST /api/events`, `POST /api/events/:id/registrations`) complete within $< 500\text{ ms}$ per request on the local/containerized PostgreSQL test environment. | Automated API test duration assertions (`durationMs < 500`). | Sprint 1 & Sprint 3 |
 | **NFR-05** | Responsive UI, Visual Consistency & Container Reproducibility | All screens render without clipped labels, overlapping controls, or unintended horizontal overflow across Desktop ($\ge 992\text{ px}$), Tablet ($768\text{–}991\text{ px}$), and Mobile ($< 768\text{ px}$) viewports; application builds and runs via Docker with `.env.example` and `0` committed secrets. | Automated UI component/style tests, Playwright multi-viewport checks (`Desktop`, `Tablet`, `Mobile`), and Docker build check. | Sprint 1 (UI/Docker) & Lab 5 (CI/CD & GCP) |
 
 ---

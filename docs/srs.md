@@ -67,7 +67,7 @@ Each user account holds exactly one role (`PARTICIPANT` or `ORGANIZER`). The aut
 
 ### 3.2 Explicitly Excluded (Out of Scope)
 * **Monetary Payments / Paid Ticketing:** All university skill-building workshops are free of charge; no payment gateway or billing is included.
-* **Self-Registration, Password Reset Emails, and External Notifications:** User accounts are provisioned via reproducible database seeding (`prisma/seed.ts`); external email/SMS/LINE gateways are excluded.
+* **Self-Registration, Password Reset Emails, and External Notifications:** User accounts are provisioned via reproducible database seeding (`server/prisma/seed.ts`); external email/SMS/LINE gateways are excluded.
 * **Multiple Roles per Account or User Administration CRUD:** Each user has a single fixed role (`PARTICIPANT` or `ORGANIZER`).
 * **Automatic Waitlist Promotion:** When `remainingSeats === 0`, registration requests are rejected immediately with `409 Conflict` (`EVENT_FULL`).
 * **Draft/Unpublished Event States:** Validated events created by an Organizer are published immediately.

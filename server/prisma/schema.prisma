@@ -1,0 +1,100 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PARTICIPANT
+  ORGANIZER
+}
+
+enum SkillCategory {
+  TECHNICAL
+  DATA_AI
+  COMMUNICATION
+  CAREER
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CANCELLED
+  ATTENDED
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  name            String
+  passwordHash    String
+  role            Role
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sessions        Session[]
+  organizedEvents Event[]        @relation("EventOrganizer")
+  registrations   Registration[] @relation("ParticipantRegistrations")
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Event {
+  id                   String         @id @default(uuid())
+  eventCode            String         @unique
+  title                String
+  description          String
+  skillCategory        SkillCategory
+  skillHours           Int
+  location             String
+  startAt              DateTime
+  endAt                DateTime
+  registrationDeadline DateTime
+  capacity             Int
+  organizerId          String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  organizer            User           @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Restrict)
+  registrations        Registration[]
+
+  @@index([organizerId])
+  @@index([skillCategory, startAt])
+  @@index([startAt])
+  @@map("events")
+}
+
+model Registration {
+  id                 String             @id @default(uuid())
+  registrationNumber String             @unique
+  eventId            String
+  participantId      String
+  status             RegistrationStatus @default(REGISTERED)
+  registeredAt       DateTime           @default(now())
+  cancelledAt        DateTime?
+  checkedInAt        DateTime?
+  updatedAt          DateTime           @updatedAt
+  event              Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant        User               @relation("ParticipantRegistrations", fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, participantId])
+  @@index([participantId, registeredAt])
+  @@index([eventId, status])
+  @@map("registrations")
+}
+

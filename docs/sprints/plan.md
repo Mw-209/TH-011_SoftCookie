@@ -22,8 +22,6 @@ The complete product baseline (`FR-01`–`FR-12`, `BR-01`–`BR-10`, `NFR-01`–
 
 ## 2. GitHub Project Kanban and Branch Flow (CPE 334 Course Workflow)
 
-Following the engineering discipline from Labs 1–4 and Section 8.3 of [`group_work_specs_v1.pdf`](../../group_work_specs_v1.pdf):
-
 ### 2.1 GitHub Project Kanban Board Columns
 Every GitHub Issue moves strictly through the following six Kanban statuses in order:
 1. **`Backlog`**: Issue is created and linked to its feature/requirement, but specification review has not yet started.

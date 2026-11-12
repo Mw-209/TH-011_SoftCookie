@@ -23,7 +23,7 @@ export default function App() {
       <header className="bg-cookie-cocoa text-white px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="font-bold text-lg tracking-tight">
-            UniSkill Events
+            SoftCookie Event
           </span>
           <span className="text-xs px-2.5 py-1 rounded bg-cookie-caramel text-white font-medium">
             TH-011_SoftCookie
@@ -34,7 +34,7 @@ export default function App() {
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-cookie-surface p-8 rounded-lg border border-cookie-border shadow-sm text-center">
           <h1 className="text-2xl font-bold text-cookie-cocoa mb-2">
-            UniSkill Events
+            SoftCookie Event
           </h1>
           <p className="text-sm text-cookie-cocoa/80 mb-6">
             University Skill-Building Event Registration and Attendance System

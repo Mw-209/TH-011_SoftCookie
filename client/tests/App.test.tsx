@@ -7,7 +7,7 @@ describe("Client Landing Shell (SoftCookie Warm Bakery UI)", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders UniSkill Events title and Sign In action", async () => {
+  it("renders SoftCookie Event title and Sign In action", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify({ status: "ready", db: "connected" }), {
         status: 200,
@@ -16,7 +16,7 @@ describe("Client Landing Shell (SoftCookie Warm Bakery UI)", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "UniSkill Events" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "SoftCookie Event" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign In" })).toHaveAttribute(
       "href",
       "/login"

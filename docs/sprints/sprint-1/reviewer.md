@@ -104,3 +104,4 @@ flowchart TD
   - *Review Comment 4:* Type `status` as `RegistrationStatus` enum and use `ApiError.notFound("Event")`.
   - *Resolution:* Addressed all 4 points in commit `4312936`, verified all 107 server and 73 client tests pass.
   - *Outcome:* Approved and merged into `sprint1-staging`.
+

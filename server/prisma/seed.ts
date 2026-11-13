@@ -90,10 +90,32 @@ export async function main() {
   const organizer2Id = seededUsers.get("organizer2@university.edu")!;
 
   // 2. Seed Skill-Building Events
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const nextWeekEnd = new Date(nextWeek.getTime() + 3 * 60 * 60 * 1000);
+  //
+  // Schedules are built from whole hours rather than offsets from "now", so the
+  // catalog shows real session times (09:00 - 12:00) instead of whatever minute
+  // the seed happened to run at. One event deliberately spans two days so the
+  // cross-day rendering path has sample data.
+  const atHour = (daysFromToday: number, hour: number): Date => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromToday);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+
+  // EVT-0001: single day, 09:00 - 12:00
+  const event1Start = atHour(7, 9);
+  const event1End = atHour(7, 12);
+
+  // EVT-0002: single day, 13:00 - 17:00
+  const event2Start = atHour(10, 13);
+  const event2End = atHour(10, 17);
+
+  // EVT-0003: two-day seminar, 10:00 on day one through 12:00 the next day.
+  const event3Start = atHour(14, 10);
+  const event3End = atHour(15, 12);
+  // The only event with an early cutoff, so the detail view exercises both the
+  // "closes early" and the "open until it starts" cases.
+  const event3Deadline = atHour(12, 17);
 
   const events = [
     {
@@ -104,9 +126,10 @@ export async function main() {
       skillCategory: SkillCategory.TECHNICAL,
       skillHours: 3,
       location: "Engineering Bldg 4, Room 402",
-      startAt: nextWeek,
-      endAt: nextWeekEnd,
-      registrationDeadline: tomorrow,
+      startAt: event1Start,
+      endAt: event1End,
+      // Registration stays open until the session begins.
+      registrationDeadline: event1Start,
       capacity: 20,
       organizerId: organizer1Id,
     },
@@ -118,9 +141,9 @@ export async function main() {
       skillCategory: SkillCategory.DATA_AI,
       skillHours: 4,
       location: "Innovation Center Lab 2",
-      startAt: nextWeek,
-      endAt: nextWeekEnd,
-      registrationDeadline: tomorrow,
+      startAt: event2Start,
+      endAt: event2End,
+      registrationDeadline: event2Start,
       capacity: 1,
       organizerId: organizer1Id,
     },
@@ -132,9 +155,9 @@ export async function main() {
       skillCategory: SkillCategory.COMMUNICATION,
       skillHours: 2,
       location: "Auditorium B",
-      startAt: nextWeek,
-      endAt: nextWeekEnd,
-      registrationDeadline: tomorrow,
+      startAt: event3Start,
+      endAt: event3End,
+      registrationDeadline: event3Deadline,
       capacity: 15,
       organizerId: organizer2Id,
     },

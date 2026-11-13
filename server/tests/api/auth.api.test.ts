@@ -31,6 +31,32 @@ async function countSessionsFor(email: string): Promise<number> {
   return prisma.session.count({ where: { user: { email } } });
 }
 
+/**
+ * Median latency over several runs. NFR-04 describes how the endpoint behaves
+ * in normal operation, so a single sample is the wrong instrument: one
+ * scheduling hiccup on a developer machine would fail a healthy endpoint. The
+ * median still fails if the endpoint is genuinely over budget.
+ *
+ * Five samples rather than three because login has little headroom: bcrypt at
+ * cost 10 (required by NFR-01) measures 310-390ms on its own here, against the
+ * 500ms budget, and roughly one request in ten spikes past it.
+ */
+async function medianDurationMs(
+  run: () => Promise<unknown>,
+  samples = 5
+): Promise<number> {
+  const durations: number[] = [];
+
+  for (let index = 0; index < samples; index += 1) {
+    const startedAt = Date.now();
+    await run();
+    durations.push(Date.now() - startedAt);
+  }
+
+  durations.sort((a, b) => a - b);
+  return durations[Math.floor(durations.length / 2)];
+}
+
 beforeAll(async () => {
   if (!DEMO_PASSWORD || DEMO_PASSWORD === "change-me") {
     throw new Error(
@@ -62,11 +88,13 @@ describe("TEST-03 [API-02]: Successful login", () => {
   it.each([ORGANIZER_EMAIL, PARTICIPANT_EMAIL])(
     "logs in %s within 500ms, sets an HttpOnly cookie and persists a Session (AC-01, NFR-04)",
     async (email) => {
-      const startedAt = Date.now();
-      const res = await request(app)
-        .post("/api/auth/login")
-        .send({ email, password: DEMO_PASSWORD });
-      const durationMs = Date.now() - startedAt;
+      const login = () =>
+        request(app)
+          .post("/api/auth/login")
+          .send({ email, password: DEMO_PASSWORD });
+
+      const durationMs = await medianDurationMs(login);
+      const res = await login();
 
       expect(res.status).toBe(200);
       expect(durationMs).toBeLessThan(500);
@@ -162,9 +190,11 @@ describe("TEST-05 [API-04]: Current user retrieval", () => {
       .send({ email: PARTICIPANT_EMAIL, password: DEMO_PASSWORD });
     const cookie = sessionCookieFrom(loginRes) as string;
 
-    const startedAt = Date.now();
-    const res = await request(app).get("/api/auth/me").set("Cookie", cookie);
-    const durationMs = Date.now() - startedAt;
+    const fetchMe = () =>
+      request(app).get("/api/auth/me").set("Cookie", cookie);
+
+    const durationMs = await medianDurationMs(fetchMe);
+    const res = await fetchMe();
 
     expect(res.status).toBe(200);
     expect(durationMs).toBeLessThan(500);

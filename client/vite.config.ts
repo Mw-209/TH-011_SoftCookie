@@ -14,6 +14,10 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // jsdom plus userEvent interactions run 1-2s each, and the suite competes
+    // with the dev servers on a developer machine. Vitest's 5s default turned
+    // healthy tests red once the suite grew past a handful of files.
+    testTimeout: 20000,
     globals: true,
     setupFiles: "./tests/setup.ts",
     include: ["tests/**/*.test.tsx"],

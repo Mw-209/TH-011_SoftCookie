@@ -62,55 +62,55 @@ Every Acceptance Criterion (`AC-01`–`AC-20`) maps to concrete automated tests 
 
 | Test ID | Type ID | Level | Req / AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :---: | :---: | :---: | :--- | :--- | :--- | :---: |
-| **TEST-01** | `UNIT-01` | Unit | `AC-05`, `NFR-01` | Password hashing & `bcrypt` verification helper | Hashes use `$2a$`/`$2b$` (`cost >= 10`); never plaintext | `server/tests/unit/password-and-auth.unit.test.ts` | Planned |
-| **TEST-02** | `API-01` | API | `NFR-04` | `GET /api/health` (liveness) & `GET /api/ready` (DB readiness) probes | `/api/health` returns `200 { status: "ok" }`; `/api/ready` returns `200 { status: "ready", db: "connected" }` (`503` if DB down), `< 500 ms` | `server/tests/api/health.api.test.ts` | Planned |
-| **TEST-03** | `API-02` | API | `AC-01`, `NFR-04` | Valid login (`ORGANIZER` & `PARTICIPANT`) | `200 OK` (`< 500 ms`), `HttpOnly` cookie set, DB `Session` saved | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-04** | `API-03` | API | `AC-02`, `NFR-01` | Invalid login (wrong password, unknown email, inactive user, empty input) | `401` / `403` / `400`; zero `Session` rows created | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-05** | `API-04` | API | `AC-03`, `NFR-01` | `GET /api/auth/me` authenticated vs. unauthenticated | `200 OK` with user profile when valid; `401` when missing/invalid | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-06** | `API-05` | API | `AC-04`, `NFR-01` | `POST /api/auth/logout` & token replay check | `200 OK`, DB session deleted; replay returns `401` | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-07** | `UI-01` | UI | `AC-01`, `AC-02` | Login form labels, asterisks (`*`), busy state, inline validation | Busy button disables; field error appears below control | `client/tests/Login.test.tsx` | Planned |
-| **TEST-08** | `UI-02` | UI | `AC-02` | Login error preserves entered email | Alert banner shown; typed email retained | `client/tests/Login.test.tsx` | Planned |
-| **TEST-09** | `E2E-01` | E2E | `AC-01`, `AC-04` | Browser login $\rightarrow$ role navbar $\rightarrow$ logout $\rightarrow$ redirect | Logs in, shows role badge, logs out, blocks `/events` | `e2e/tests/auth-and-access.spec.ts` | Planned |
-| **TEST-10** | `UNIT-02` | Unit | `AC-06`, `BR-01` | `eventCode` generator (`EVT-YYYY-NNNN`) & string trimming | Produces unique `EVT-2026-NNNN` and trims whitespace | `server/tests/unit/event-rules.unit.test.ts` | Planned |
-| **TEST-11** | `UNIT-03` | Unit | `AC-07`, `BR-01` | Event validator (`capacity <= 0`, non-int, `skillHours <= 0`, invalid dates) (**TDD #1**) | Throws `VALIDATION_ERROR` with field-level details | `server/tests/unit/event-rules.unit.test.ts` | Planned |
-| **TEST-12** | `API-06` | API | `AC-06`, `FR-02` | `POST /api/events` as `organizer1` with valid data | `201 Created`; saved in DB with `EVT-2026-NNNN` & `organizerId` | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-13** | `API-07` | API | `AC-07`, `BR-01` | `POST /api/events` with `capacity: 0`, `-5`, or bad dates | `400 Bad Request`; no event saved in DB | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-14** | `API-08` | API | `AC-08`, `BR-04` | `POST /api/events` as `PARTICIPANT` or `ANONYMOUS` | `403 Forbidden` for `PARTICIPANT`; `401` for `ANONYMOUS` | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-15** | `API-09` | API | `AC-09`, `NFR-04` | `GET /api/events` & `GET /api/events/:id` | `200 OK` (`< 500 ms`) with authoritative `remainingSeats`; `404` if missing | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-16** | `UI-03` | UI | `AC-07` | `CreateEvent` form validation, read-only fields, busy state & data retention | Inline errors under fields; form data preserved on failure | `client/tests/CreateEvent.test.tsx` | Planned |
-| **TEST-17** | `UI-04` | UI | `AC-09` | `EventCatalog` & `EventDetail` loading, empty, error & seat badge states | Renders loading, empty message, and `remainingSeats / capacity` | `client/tests/EventCatalog.test.tsx` | Planned |
-| **TEST-18** | `E2E-02` | E2E | `AC-06`, `AC-09` | Organizer creates event in UI & verifies detail/catalog | Saved event displays `EVT-2026-NNNN` and seat count | `e2e/tests/organizer-journey.spec.ts` | Planned |
-| **TEST-19** | `E2E-03` | E2E | `AC-08`, `NFR-02` | Participant attempts to open `/events/new` | Displays `403 Access Denied` UI | `e2e/tests/auth-and-access.spec.ts` | Planned |
-| **TEST-20** | `UNIT-04` | Unit | `AC-10`, `BR-01` | `registrationNumber` generator (`REG-YYYY-NNNN`) & seat math | Formats `REG-2026-NNNN` and calculates remaining seats | `server/tests/unit/registration-rules.unit.test.ts` | Planned |
-| **TEST-21** | `UNIT-05` | Unit | `AC-11`, `AC-12` | Registration rule evaluator (duplicate & full capacity) (**TDD #2**) | Rejects duplicate active status and `activeCount >= capacity` | `server/tests/unit/registration-rules.unit.test.ts` | Planned |
-| **TEST-22** | `API-10` | API | `AC-10`, `NFR-04` | Valid `POST /api/events/:id/registrations` by `student1` | `201 Created` (`< 500 ms`), saves `REGISTERED` row, decrements seat | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-23** | `API-11` | API | `AC-11`, `BR-03` | Duplicate registration attempt by `student1` on same event | `409 Conflict` (`DUPLICATE_REGISTRATION`); 1 row in DB | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-24** | `API-12` | API | `AC-12`, `BR-02` | Registration attempt on full 1-seat event (`EVT-2026-0002`) (**TDD #3**) | `409 Conflict` (`EVENT_FULL`); active count remains `1` | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-25** | `API-13` | API | `AC-12`, `NFR-03` | Competing parallel requests (`Promise.all`) for last seat (`capacity = 1`) | Exactly one `201 Created` and one `409 Conflict`; DB count `= 1` | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-26** | `API-14` | API | `AC-13`, `BR-04` | `ORGANIZER` attempts participant registration or `GET /api/registrations/my` | `403 Forbidden` (`FORBIDDEN_ROLE`) | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-27** | `API-15` | API | `AC-14`, `BR-04` | `student1` retrieves `GET /api/registrations/my` & `/:id` (ignores spoofed ID) | `200 OK` with owned registrations only | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-28** | `API-16` | API | `AC-15`, `BR-05` | `student2` requests `student1`'s private registration (`GET /api/registrations/:id`) (**TDD #4a**) | `403 Forbidden` (`FORBIDDEN_OWNERSHIP`); zero data leaked | `server/tests/api/registrations.api.test.ts` | Planned |
-| **TEST-29** | `UI-05` | UI | `AC-10`, `AC-14` | `MyRegistrations` & registration button states (busy, registered, full, empty) | Disables button when busy; renders `REG-2026-NNNN` and empty state | `client/tests/MyRegistrations.test.tsx` | Planned |
-| **TEST-30** | `E2E-04` | E2E | `AC-10`, `AC-14` | Participant registers on `/events/:id` & views `/my-registrations` | Confirmation shows `REG-2026-NNNN`; listed in `My Registrations` | `e2e/tests/participant-journey.spec.ts` | Planned |
-| **TEST-31** | `E2E-05` | E2E | `AC-11`, `AC-12` | E2E duplicate registration & full-event rejection on 1-seat event | UI blocks/rejects duplicate and full-event sign-ups clearly | `e2e/tests/participant-journey.spec.ts` | Planned |
-| **TEST-32** | `API-17` | API | `AC-16`, `FR-06` | Owning `organizer1` requests `GET /api/events/:event1Id/registrations` | `200 OK` with participant roster for Event 1 | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-33** | `API-18` | API | `AC-17`, `BR-05` | Non-owner `organizer2` requests `GET /api/events/:event1Id/registrations` (**TDD #4b**) | `403 Forbidden` (`FORBIDDEN_OWNERSHIP`); no roster returned | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-34** | `API-19` | API | `AC-18`, `BR-04` | `student1` (`PARTICIPANT`) requests `GET /api/events/:event1Id/registrations` | `403 Forbidden` (`FORBIDDEN_ROLE`); no roster returned | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-35** | `UI-06` | UI | `AC-16`, `AC-17` | `OrganizerRoster` populated table, empty roster, and `403` state | Renders roster rows, empty message, or `403` alert accurately | `client/tests/OrganizerRoster.test.tsx` | Planned |
-| **TEST-36** | `UI-07` | UI Style | `AC-19`, `NFR-05` | SoftCookie Warm Bakery theme token, read-only shading, asterisk (`*`) & badge checks | Confirms `#603928` header, `#A85F34` primary, `#F0F0F0` read-only, and text badges | `client/tests/ResponsiveAndTheme.test.tsx` | Planned |
-| **TEST-37** | `E2E-06` | E2E | `AC-16`–`AC-18` | `organizer1` inspects owned roster (`200`); `organizer2` & `student1` blocked (`403`) | Owner sees roster; non-owner organizer & participant see `403` | `e2e/tests/auth-and-access.spec.ts` | Planned |
-| **TEST-38** | `E2E-07` | E2E | `AC-19`, `AC-20` | Multi-viewport check at Desktop (`1280px`), Tablet (`820px`), Mobile (`375px`) | Zero horizontal overflow, no clipped labels, usable controls | `e2e/tests/responsive-and-states.spec.ts` | Planned |
+| **TEST-01** | `UNIT-01` | Unit | `AC-05`, `NFR-01` | Password hashing & `bcrypt` verification helper | Hashes use `$2a$`/`$2b$` (`cost >= 10`); never plaintext | `server/tests/unit/password-and-auth.unit.test.ts` | Passed |
+| **TEST-02** | `API-01` | API | `NFR-04` | `GET /api/health` (liveness) & `GET /api/ready` (DB readiness) probes | `/api/health` returns `200 { status: "ok" }`; `/api/ready` returns `200 { status: "ready", db: "connected" }` (`503` if DB down), `< 500 ms` | `server/tests/api/health.api.test.ts` | Passed |
+| **TEST-03** | `API-02` | API | `AC-01`, `NFR-04` | Valid login (`ORGANIZER` & `PARTICIPANT`) | `200 OK` (`< 500 ms`), `HttpOnly` cookie set, DB `Session` saved | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-04** | `API-03` | API | `AC-02`, `NFR-01` | Invalid login (wrong password, unknown email, inactive user, empty input) | `401` / `403` / `400`; zero `Session` rows created | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-05** | `API-04` | API | `AC-03`, `NFR-01` | `GET /api/auth/me` authenticated vs. unauthenticated | `200 OK` with user profile when valid; `401` when missing/invalid | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-06** | `API-05` | API | `AC-04`, `NFR-01` | `POST /api/auth/logout` & token replay check | `200 OK`, DB session deleted; replay returns `401` | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-07** | `UI-01` | UI | `AC-01`, `AC-02` | Login form labels, asterisks (`*`), busy state, inline validation | Busy button disables; field error appears below control | `client/tests/Login.test.tsx` | Passed |
+| **TEST-08** | `UI-02` | UI | `AC-02` | Login error preserves entered email | Alert banner shown; typed email retained | `client/tests/Login.test.tsx` | Passed |
+| **TEST-09** | `E2E-01` | E2E | `AC-01`, `AC-04` | Browser login $\rightarrow$ role navbar $\rightarrow$ logout $\rightarrow$ redirect | Logs in, shows role badge, logs out, blocks `/events` | `e2e/tests/auth-and-access.spec.ts` | Passed |
+| **TEST-10** | `UNIT-02` | Unit | `AC-06`, `BR-01` | `eventCode` generator (`EVT-YYYY-NNNN`) & string trimming | Produces unique `EVT-2026-NNNN` and trims whitespace | `server/tests/unit/event-rules.unit.test.ts` | Passed |
+| **TEST-11** | `UNIT-03` | Unit | `AC-07`, `BR-01` | Event validator (`capacity <= 0`, non-int, `skillHours <= 0`, invalid dates) (**TDD #1**) | Throws `VALIDATION_ERROR` with field-level details | `server/tests/unit/event-rules.unit.test.ts` | Passed |
+| **TEST-12** | `API-06` | API | `AC-06`, `FR-02` | `POST /api/events` as `organizer1` with valid data | `201 Created`; saved in DB with `EVT-2026-NNNN` & `organizerId` | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-13** | `API-07` | API | `AC-07`, `BR-01` | `POST /api/events` with `capacity: 0`, `-5`, or bad dates | `400 Bad Request`; no event saved in DB | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-14** | `API-08` | API | `AC-08`, `BR-04` | `POST /api/events` as `PARTICIPANT` or `ANONYMOUS` | `403 Forbidden` for `PARTICIPANT`; `401` for `ANONYMOUS` | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-15** | `API-09` | API | `AC-09`, `NFR-04` | `GET /api/events` & `GET /api/events/:id` | `200 OK` (`< 500 ms`) with authoritative `remainingSeats`; `404` if missing | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-16** | `UI-03` | UI | `AC-07` | `CreateEvent` form validation, read-only fields, busy state & data retention | Inline errors under fields; form data preserved on failure | `client/tests/CreateEvent.test.tsx` | Passed |
+| **TEST-17** | `UI-04` | UI | `AC-09` | `EventCatalog` & `EventDetail` loading, empty, error & seat badge states | Renders loading, empty message, and `remainingSeats / capacity` | `client/tests/EventCatalog.test.tsx` | Passed |
+| **TEST-18** | `E2E-02` | E2E | `AC-06`, `AC-09` | Organizer creates event in UI & verifies detail/catalog | Saved event displays `EVT-2026-NNNN` and seat count | `e2e/tests/organizer-journey.spec.ts` | Passed |
+| **TEST-19** | `E2E-03` | E2E | `AC-08`, `NFR-02` | Participant attempts to open `/events/new` | Displays `403 Access Denied` UI | `e2e/tests/auth-and-access.spec.ts` | Passed |
+| **TEST-20** | `UNIT-04` | Unit | `AC-10`, `BR-01` | `registrationNumber` generator (`REG-YYYY-NNNN`) & seat math | Formats `REG-2026-NNNN` and calculates remaining seats | `server/tests/unit/registration-rules.unit.test.ts` | Passed |
+| **TEST-21** | `UNIT-05` | Unit | `AC-11`, `AC-12` | Registration rule evaluator (duplicate & full capacity) (**TDD #2**) | Rejects duplicate active status and `activeCount >= capacity` | `server/tests/unit/registration-rules.unit.test.ts` | Passed |
+| **TEST-22** | `API-10` | API | `AC-10`, `NFR-04` | Valid `POST /api/events/:id/registrations` by `student1` | `201 Created` (`< 500 ms`), saves `REGISTERED` row, decrements seat | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-23** | `API-11` | API | `AC-11`, `BR-03` | Duplicate registration attempt by `student1` on same event | `409 Conflict` (`DUPLICATE_REGISTRATION`); 1 row in DB | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-24** | `API-12` | API | `AC-12`, `BR-02` | Registration attempt on full 1-seat event (`EVT-2026-0002`) (**TDD #3**) | `409 Conflict` (`EVENT_FULL`); active count remains `1` | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-25** | `API-13` | API | `AC-12`, `NFR-03` | Competing parallel requests (`Promise.all`) for last seat (`capacity = 1`) | Exactly one `201 Created` and one `409 Conflict`; DB count `= 1` | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-26** | `API-14` | API | `AC-13`, `BR-04` | `ORGANIZER` attempts participant registration or `GET /api/registrations/my` | `403 Forbidden` (`FORBIDDEN_ROLE`) | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-27** | `API-15` | API | `AC-14`, `BR-04` | `student1` retrieves `GET /api/registrations/my` & `/:id` (ignores spoofed ID) | `200 OK` with owned registrations only | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-28** | `API-16` | API | `AC-15`, `BR-05` | `student2` requests `student1`'s private registration (`GET /api/registrations/:id`) (**TDD #4a**) | `403 Forbidden` (`FORBIDDEN_OWNERSHIP`); zero data leaked | `server/tests/api/registrations.api.test.ts` | Passed |
+| **TEST-29** | `UI-05` | UI | `AC-10`, `AC-14` | `MyRegistrations` & registration button states (busy, registered, full, empty) | Disables button when busy; renders `REG-2026-NNNN` and empty state | `client/tests/MyRegistrations.test.tsx` | Passed |
+| **TEST-30** | `E2E-04` | E2E | `AC-10`, `AC-14` | Participant registers on `/events/:id` & views `/my-registrations` | Confirmation shows `REG-2026-NNNN`; listed in `My Registrations` | `e2e/tests/participant-journey.spec.ts` | Passed |
+| **TEST-31** | `E2E-05` | E2E | `AC-11`, `AC-12` | E2E duplicate registration & full-event rejection on 1-seat event | UI blocks/rejects duplicate and full-event sign-ups clearly | `e2e/tests/participant-journey.spec.ts` | Passed |
+| **TEST-32** | `API-17` | API | `AC-16`, `FR-06` | Owning `organizer1` requests `GET /api/events/:event1Id/registrations` | `200 OK` with participant roster for Event 1 | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-33** | `API-18` | API | `AC-17`, `BR-05` | Non-owner `organizer2` requests `GET /api/events/:event1Id/registrations` (**TDD #4b**) | `403 Forbidden` (`FORBIDDEN_OWNERSHIP`); no roster returned | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-34** | `API-19` | API | `AC-18`, `BR-04` | `student1` (`PARTICIPANT`) requests `GET /api/events/:event1Id/registrations` | `403 Forbidden` (`FORBIDDEN_ROLE`); no roster returned | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-35** | `UI-06` | UI | `AC-16`, `AC-17` | `OrganizerRoster` populated table, empty roster, and `403` state | Renders roster rows, empty message, or `403` alert accurately | `client/tests/OrganizerRoster.test.tsx` | Passed |
+| **TEST-36** | `UI-07` | UI Style | `AC-19`, `NFR-05` | SoftCookie Warm Bakery theme token, read-only shading, asterisk (`*`) & badge checks | Confirms `#603928` header, `#A85F34` primary, `#F0F0F0` read-only, and text badges | `client/tests/ResponsiveAndTheme.test.tsx` | Passed |
+| **TEST-37** | `E2E-06` | E2E | `AC-16`–`AC-18` | `organizer1` inspects owned roster (`200`); `organizer2` & `student1` blocked (`403`) | Owner sees roster; non-owner organizer & participant see `403` | `e2e/tests/auth-and-access.spec.ts` | Passed |
+| **TEST-38** | `E2E-07` | E2E | `AC-19`, `AC-20` | Multi-viewport check at Desktop (`1280px`), Tablet (`820px`), Mobile (`375px`) | Zero horizontal overflow, no clipped labels, usable controls | `e2e/tests/responsive-and-states.spec.ts` | Passed |
 
 ---
 
 ## 4. Responsive and Visual Inspection Checklist (SoftCookie Warm Bakery UI)
 
 Before declaring Sprint 1 complete, every screen must pass this visual and responsive checklist:
-- [ ] **Color Tokens:** App header uses `#603928`, primary action buttons use `#A85F34` (hover `#D37D30`), warm highlights use `#F2B366`, page background uses `#F0F0F0`, cards use `#FFFFFF`, and success badges use `#EAF6EF` (`#065F46` text).
-- [ ] **Editable vs. Read-Only Controls:** Editable inputs have `#FFFFFF` background with `#C4B5AB` borders; system-generated/read-only fields (`Event Code`, `Registration No.`, `Organizer`, `Remaining Seats`) use distinct `#F0F0F0` shading.
-- [ ] **Labels, Asterisks, and Inline Validation:** Labels appear above controls; required fields display a red asterisk (`*`); validation messages render immediately below the associated field in `#B91C1C`.
-- [ ] **Busy Submit State & Data Retention:** Submit buttons disable and show busy text while requests are in flight; form inputs retain user-typed values after validation or API errors.
-- [ ] **Desktop ($\ge 992\text{ px}$), Tablet ($768\text{–}991\text{ px}$), and Mobile ($< 768\text{ px}$):** No clipped text, overlapping badges, hidden action buttons, or horizontal page scrolling at any viewport size.
+- [x] **Color Tokens:** App header uses `#603928`, primary action buttons use `#A85F34` (hover `#D37D30`), warm highlights use `#F2B366`, page background uses `#F0F0F0`, cards use `#FFFFFF`, and success badges use `#EAF6EF` (`#065F46` text).
+- [x] **Editable vs. Read-Only Controls:** Editable inputs have `#FFFFFF` background with `#C4B5AB` borders; system-generated/read-only fields (`Event Code`, `Registration No.`, `Organizer`, `Remaining Seats`) use distinct `#F0F0F0` shading.
+- [x] **Labels, Asterisks, and Inline Validation:** Labels appear above controls; required fields display a red asterisk (`*`); validation messages render immediately below the associated field in `#B91C1C`.
+- [x] **Busy Submit State & Data Retention:** Submit buttons disable and show busy text while requests are in flight; form inputs retain user-typed values after validation or API errors.
+- [x] **Desktop ($\ge 992\text{ px}$), Tablet ($768\text{–}991\text{ px}$), and Mobile ($< 768\text{ px}$):** No clipped text, overlapping badges, hidden action buttons, or horizontal page scrolling at any viewport size.
 
 ---
 
@@ -118,16 +118,16 @@ Before declaring Sprint 1 complete, every screen must pass this visual and respo
 
 ### 5.1 Part 1: Product Completion Definition of Done
 The coding agent and development team may report Sprint 1 product work as complete only when:
-- [ ] All Sprint 1 features (`F-01`, `F-02`, `F-03`, `F-04`) and requirements (`FR-01`–`FR-06`, `BR-01`–`BR-05`, `NFR-01`–`NFR-05`) are implemented according to the approved contracts.
-- [ ] All 20 Acceptance Criteria (`AC-01`–`AC-20`) are satisfied by observable application behavior.
-- [ ] All 38 planned automated tests (`TEST-01`–`TEST-38` across Unit, API/Integration, UI Component/Style, and Playwright E2E) pass from documented commands on the final `main` branch.
-- [ ] Zero required tests are skipped, disabled, weakened, or commented out.
-- [ ] TDD Red $\rightarrow$ Green evidence is recorded for key business rules (`BR-01`, `BR-02`, `BR-03`) and ownership restrictions (`BR-04`, `BR-05`).
-- [ ] `README.md` setup, migration, idempotent seed, and test execution instructions are complete and accurate, and `.gitignore` + `.env.example` ensure zero secrets are committed.
+- [x] All Sprint 1 features (`F-01`, `F-02`, `F-03`, `F-04`) and requirements (`FR-01`–`FR-06`, `BR-01`–`BR-05`, `NFR-01`–`NFR-05`) are implemented according to the approved contracts.
+- [x] All 20 Acceptance Criteria (`AC-01`–`AC-20`) are satisfied by observable application behavior.
+- [x] All 38 planned automated tests (`TEST-01`–`TEST-38` across Unit, API/Integration, UI Component/Style, and Playwright E2E) pass from documented commands on the final `main` branch.
+- [x] Zero required tests are skipped, disabled, weakened, or commented out.
+- [x] TDD Red $\rightarrow$ Green evidence is recorded for key business rules (`BR-01`, `BR-02`, `BR-03`) and ownership restrictions (`BR-04`, `BR-05`).
+- [x] `README.md` setup, migration, idempotent seed, and test execution instructions are complete and accurate, and `.gitignore` + `.env.example` ensure zero secrets are committed.
 
 ### 5.2 Part 2: Course Delivery and Engineering Process Definition of Done
-- [ ] Sprint 1 work is tracked via GitHub Issues (`Issue #1`–`Issue #7`) on the GitHub Project Kanban board (`Backlog` $\rightarrow$ `Specified` $\rightarrow$ `Started` $\rightarrow$ `PR Review` $\rightarrow$ `Fixing` $\rightarrow$ `Done`).
-- [ ] Every Issue is implemented on its dedicated feature branch from `sprint1-staging` and merged via a teammate-reviewed Pull Request (authors never approve their own PRs).
-- [ ] Peer review details, comments given/received, responses, approvals, and team contribution table are recorded in [`docs/sprints/sprint-1/reviewer.md`](./reviewer.md).
-- [ ] AI agent usage, selected key prompts, and reflection are documented in [`docs/sprints/sprint-1/ai-use.md`](./ai-use.md).
-- [ ] `sprint1-staging` is merged into `main` via a reviewed release PR, tagged (`v1.0.0-sprint1`), and documented in the self-contained Project Deliverable 1 PDF (`Parts A–F`).
+- [x] Sprint 1 work is tracked via GitHub Issues (`Issue #1`–`Issue #7`) on the GitHub Project Kanban board (`Backlog` $\rightarrow$ `Specified` $\rightarrow$ `Started` $\rightarrow$ `PR Review` $\rightarrow$ `Fixing` $\rightarrow$ `Done`).
+- [x] Every Issue is implemented on its dedicated feature branch from `sprint1-staging` and merged via a teammate-reviewed Pull Request (authors never approve their own PRs).
+- [x] Peer review details, comments given/received, responses, approvals, and team contribution table are recorded in [`docs/sprints/sprint-1/reviewer.md`](./reviewer.md).
+- [x] AI agent usage, selected key prompts, and reflection are documented in [`docs/sprints/sprint-1/ai-use.md`](./ai-use.md).
+- [x] `sprint1-staging` is merged into `main` via a reviewed release PR, tagged (`v1.0.0-sprint1`), and documented in the self-contained Project Deliverable 1 PDF (`Parts A–F`).

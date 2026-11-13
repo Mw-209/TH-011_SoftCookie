@@ -1,9 +1,12 @@
-import express, { Request, Response } from "express";
+import express, { type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "node:path";
 import fs from "node:fs";
-import { getPrisma } from "./prisma.js";
+import { healthRouter } from "./routes/health.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { errorHandler } from "./middleware/error-handler.js";
+import { ApiError, toErrorBody } from "./lib/errors.js";
 
 export const app = express();
 
@@ -17,27 +20,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Liveness probe (Lab 5 & NFR-04)
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.status(200).json({ status: "ok" });
-});
-
-// Readiness probe verifying PostgreSQL connectivity
-app.get("/api/ready", async (_req: Request, res: Response) => {
-  try {
-    const prisma = getPrisma();
-    await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({ status: "ready", db: "connected" });
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Unknown database error";
-    res.status(503).json({
-      status: "not_ready",
-      db: "disconnected",
-      error: message,
-    });
-  }
-});
+app.use("/api", healthRouter);
+app.use("/api/auth", authRouter);
 
 // Serve built React SPA in single-container production mode (Cloud Run / Docker)
 const clientDistDir = path.resolve(process.cwd(), "..", "client", "dist");
@@ -52,3 +36,11 @@ if (process.env.NODE_ENV === "production" && fs.existsSync(clientDistDir)) {
   });
 }
 
+// Unknown API routes must not fall through to the SPA handler.
+app.use("/api", (_req: Request, res: Response) => {
+  res.status(404).json(
+    toErrorBody(new ApiError(404, "NOT_FOUND", "Endpoint not found."))
+  );
+});
+
+app.use(errorHandler);

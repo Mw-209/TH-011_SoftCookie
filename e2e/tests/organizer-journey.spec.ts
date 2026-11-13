@@ -88,7 +88,7 @@ test("organizer publishes an event and sees its generated code", async ({
   await expect(page.getByText("25 / 25 seats available")).toBeVisible();
 
   // AC-09: the new event is discoverable in the catalog.
-  await page.getByRole("link", { name: "Browse Events" }).click();
+  await page.getByRole("link", { name: "Events", exact: true }).click();
   await expect(page).toHaveURL(/\/events$/);
   await expect(page.getByText(eventCode)).toBeVisible();
   await expect(page.getByRole("link", { name: title })).toBeVisible();

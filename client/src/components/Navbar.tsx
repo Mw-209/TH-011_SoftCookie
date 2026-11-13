@@ -5,11 +5,11 @@ import { useAuth } from "../auth/AuthContext";
 /** Role-specific navigation, per F-01 section 5. */
 const LINKS_BY_ROLE = {
   PARTICIPANT: [
-    { to: "/events", label: "Browse Events" },
+    { to: "/events", label: "Events" },
     { to: "/my-registrations", label: "My Registrations" },
   ],
   ORGANIZER: [
-    { to: "/events", label: "Browse Events" },
+    { to: "/events", label: "Events" },
     { to: "/events/new", label: "Create Event" },
   ],
 } as const;

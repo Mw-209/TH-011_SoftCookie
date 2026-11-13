@@ -46,7 +46,9 @@ test("participant logs in, sees the role navbar, logs out and loses access", asy
   const navbar = page.getByRole("banner");
   await expect(navbar.getByText("Kittipong Jaidee")).toBeVisible();
   await expect(navbar.getByText("PARTICIPANT")).toBeVisible();
-  await expect(navbar.getByRole("link", { name: "Browse Events" })).toBeVisible();
+  await expect(
+    navbar.getByRole("link", { name: "Events", exact: true })
+  ).toBeVisible();
   await expect(
     navbar.getByRole("link", { name: "My Registrations" })
   ).toBeVisible();
@@ -131,7 +133,7 @@ test("participant can still browse the catalog and open an event (AC-09)", async
 }) => {
   await signInAndWait(page, PARTICIPANT_EMAIL);
 
-  await page.getByRole("link", { name: "Browse Events" }).click();
+  await page.getByRole("link", { name: "Events", exact: true }).click();
   await expect(page).toHaveURL(/\/events$/);
   await expect(page.getByText("EVT-2026-0001")).toBeVisible();
 

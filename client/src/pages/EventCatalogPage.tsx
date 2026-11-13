@@ -38,7 +38,7 @@ export default function EventCatalogPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 className="mb-1 text-2xl font-bold text-cookie-cocoa">
-        Browse Events
+        Events
       </h1>
       <p className="mb-8 text-sm text-cookie-cocoa/80">
         Published university skill-building events, sorted by event date —

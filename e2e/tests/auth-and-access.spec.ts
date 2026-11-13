@@ -26,6 +26,16 @@ async function signIn(page: import("@playwright/test").Page, email: string) {
   await page.getByRole("button", { name: "Sign In" }).click();
 }
 
+/** signIn plus a wait for the authenticated shell, for tests that then navigate. */
+async function signInAndWait(
+  page: import("@playwright/test").Page,
+  email: string
+) {
+  await signIn(page, email);
+  // The login page has its own <header>, so `banner` is not proof of a session.
+  await expect(page.getByRole("button", { name: "Log Out" })).toBeVisible();
+}
+
 test("participant logs in, sees the role navbar, logs out and loses access", async ({
   page,
 }) => {
@@ -91,4 +101,43 @@ test("inactive account is rejected with its own message (BR-04)", async ({
   // The message must not disclose why the account is blocked.
   await expect(page.getByRole("alert")).not.toContainText(/inactive|deactivated/i);
   await expect(page).toHaveURL(/\/login$/);
+});
+
+/**
+ * TEST-19 [E2E-03] — AC-08, NFR-02.
+ * A participant has no route to event creation, by link or by URL.
+ */
+test("participant cannot reach event creation (AC-08)", async ({ page }) => {
+  await signInAndWait(page, PARTICIPANT_EMAIL);
+
+  // The navbar must not offer the organizer action at all.
+  await expect(
+    page.getByRole("banner").getByRole("link", { name: "Create Event" })
+  ).toHaveCount(0);
+
+  // Direct navigation renders the access-denied card instead of the form.
+  await page.goto("/events/new");
+  await expect(
+    page.getByRole("heading", { name: "403 Access Denied" })
+  ).toBeVisible();
+  await expect(page.getByLabel(/Event Title/)).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Publish Event" })
+  ).toHaveCount(0);
+});
+
+test("participant can still browse the catalog and open an event (AC-09)", async ({
+  page,
+}) => {
+  await signInAndWait(page, PARTICIPANT_EMAIL);
+
+  await page.getByRole("link", { name: "Browse Events" }).click();
+  await expect(page).toHaveURL(/\/events$/);
+  await expect(page.getByText("EVT-2026-0001")).toBeVisible();
+
+  await page
+    .getByRole("link", { name: "Full-Stack TypeScript & Testing Workshop" })
+    .click();
+  await expect(page).toHaveURL(/\/events\/[0-9a-f-]{36}$/);
+  await expect(page.getByText("EVT-2026-0001")).toBeVisible();
 });

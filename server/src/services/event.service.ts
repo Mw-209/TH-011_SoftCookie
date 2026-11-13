@@ -1,6 +1,7 @@
-import { Prisma, SkillCategory, type Event } from "@prisma/client";
+import { Prisma, SkillCategory, RegistrationStatus, type Event } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { ApiError } from "../lib/errors.js";
+import { ACTIVE_REGISTRATION_STATUSES } from "./registration.service.js";
 
 /** BR-01 bounds. Kept here so the validator and its tests share one source. */
 export const EVENT_LIMITS = {
@@ -205,7 +206,7 @@ const eventInclude = {
   // CANCELLED rows release their seat.
   _count: {
     select: {
-      registrations: { where: { status: { in: ["REGISTERED", "ATTENDED"] } } },
+      registrations: { where: { status: { in: [...ACTIVE_REGISTRATION_STATUSES] } } },
     },
   },
 } satisfies Prisma.EventInclude;
@@ -334,7 +335,7 @@ export interface EventRosterRegistration {
   id: string;
   registrationNumber: string;
   eventId: string;
-  status: string;
+  status: RegistrationStatus;
   registeredAt: string;
   participant: {
     id: string;
@@ -361,8 +362,6 @@ export interface EventRoster {
   registrations: EventRosterRegistration[];
 }
 
-const ACTIVE_STATUSES = ["REGISTERED", "ATTENDED"] as const;
-
 /**
  * Retrieves the full participant registration roster for an event.
  * Enforces BR-05: only the owning organizer may inspect registrations.
@@ -374,24 +373,15 @@ export async function getEventRoster(
   const prisma = getPrisma();
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    include: {
-      registrations: {
-        select: { status: true },
-      },
-    },
   });
 
   if (!event) {
-    throw new ApiError(404, "NOT_FOUND", "Event not found.");
+    throw ApiError.notFound("Event");
   }
 
   if (event.organizerId !== organizerId) {
     throw ApiError.forbiddenOwnership();
   }
-
-  const activeRegistrationsCount = event.registrations.filter((r) =>
-    (ACTIVE_STATUSES as readonly string[]).includes(r.status)
-  ).length;
 
   const registrations = await prisma.registration.findMany({
     where: { eventId },
@@ -406,6 +396,10 @@ export async function getEventRoster(
       },
     },
   });
+
+  const activeRegistrationsCount = registrations.filter((r) =>
+    (ACTIVE_REGISTRATION_STATUSES as readonly RegistrationStatus[]).includes(r.status)
+  ).length;
 
   return {
     event: {

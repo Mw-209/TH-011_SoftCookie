@@ -5,7 +5,6 @@ import { ApiClientError } from "../api/client";
 import { fetchEventRoster, type EventRosterData } from "../api/roster";
 import { SKILL_CATEGORY_LABELS } from "../api/events";
 import { formatDateTime, formatEventDateRange, formatTimeRange } from "../lib/datetime";
-import ClockIcon from "../components/ClockIcon";
 import MapPinIcon from "../components/MapPinIcon";
 
 function RosterStatusBadge({ status }: { status: string }) {

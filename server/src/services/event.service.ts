@@ -1,6 +1,7 @@
-import { Prisma, SkillCategory, type Event } from "@prisma/client";
+import { Prisma, SkillCategory, RegistrationStatus, type Event } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { ApiError } from "../lib/errors.js";
+import { ACTIVE_REGISTRATION_STATUSES } from "./registration.service.js";
 
 /** BR-01 bounds. Kept here so the validator and its tests share one source. */
 export const EVENT_LIMITS = {
@@ -205,7 +206,7 @@ const eventInclude = {
   // CANCELLED rows release their seat.
   _count: {
     select: {
-      registrations: { where: { status: { in: ["REGISTERED", "ATTENDED"] } } },
+      registrations: { where: { status: { in: [...ACTIVE_REGISTRATION_STATUSES] } } },
     },
   },
 } satisfies Prisma.EventInclude;
@@ -328,4 +329,104 @@ export async function getEventById(id: string): Promise<PublicEvent> {
   }
 
   return toPublicEvent(event as EventWithCounts);
+}
+
+export interface EventRosterRegistration {
+  id: string;
+  registrationNumber: string;
+  eventId: string;
+  status: RegistrationStatus;
+  registeredAt: string;
+  participant: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface EventRoster {
+  event: {
+    id: string;
+    eventCode: string;
+    title: string;
+    skillCategory: SkillCategory;
+    skillHours: number;
+    location: string;
+    startAt: string;
+    endAt: string;
+    capacity: number;
+    activeRegistrationsCount: number;
+    remainingSeats: number;
+    organizerId: string;
+  };
+  registrations: EventRosterRegistration[];
+}
+
+/**
+ * Retrieves the full participant registration roster for an event.
+ * Enforces BR-05: only the owning organizer may inspect registrations.
+ */
+export async function getEventRoster(
+  eventId: string,
+  organizerId: string
+): Promise<EventRoster> {
+  const prisma = getPrisma();
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+
+  if (!event) {
+    throw ApiError.notFound("Event");
+  }
+
+  if (event.organizerId !== organizerId) {
+    throw ApiError.forbiddenOwnership();
+  }
+
+  const registrations = await prisma.registration.findMany({
+    where: { eventId },
+    orderBy: { registeredAt: "asc" },
+    include: {
+      participant: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  const activeRegistrationsCount = registrations.filter((r) =>
+    (ACTIVE_REGISTRATION_STATUSES as readonly RegistrationStatus[]).includes(r.status)
+  ).length;
+
+  return {
+    event: {
+      id: event.id,
+      eventCode: event.eventCode,
+      title: event.title,
+      skillCategory: event.skillCategory,
+      skillHours: event.skillHours,
+      location: event.location,
+      startAt: event.startAt.toISOString(),
+      endAt: event.endAt.toISOString(),
+      capacity: event.capacity,
+      activeRegistrationsCount,
+      remainingSeats: Math.max(0, event.capacity - activeRegistrationsCount),
+      organizerId: event.organizerId,
+    },
+    registrations: registrations.map((r) => ({
+      id: r.id,
+      registrationNumber: r.registrationNumber,
+      eventId: r.eventId,
+      status: r.status,
+      registeredAt: r.registeredAt.toISOString(),
+      participant: {
+        id: r.participant.id,
+        name: r.participant.name,
+        email: r.participant.email,
+      },
+    })),
+  };
 }

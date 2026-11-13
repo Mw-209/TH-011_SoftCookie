@@ -5,6 +5,7 @@ import EventCatalogPage from "./pages/EventCatalogPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import CreateEventPage from "./pages/CreateEventPage";
 import MyRegistrationsPage from "./pages/MyRegistrationsPage";
+import OrganizerRosterPage from "./pages/OrganizerRosterPage";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -46,6 +47,10 @@ export default function App() {
       <Route
         path="/my-registrations"
         element={protectedPage(<MyRegistrationsPage />)}
+      />
+      <Route
+        path="/organizer/events/:id/registrations"
+        element={protectedPage(<OrganizerRosterPage />)}
       />
 
       {/* Unknown paths fall back to the home route, which gates on the session. */}

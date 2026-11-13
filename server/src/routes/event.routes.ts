@@ -3,6 +3,7 @@ import { requireAuth, requireRole } from "../middleware/auth.js";
 import {
   createEvent,
   getEventById,
+  getEventRoster,
   listEvents,
   validateEventInput,
 } from "../services/event.service.js";
@@ -62,6 +63,20 @@ eventRouter.post(
       const result = await registerForEvent(req.currentUser!.id, req.params.id);
 
       res.status(201).json({ data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /api/events/:id/registrations — ORGANIZER only (F-04 7.1, BR-04, BR-05)
+eventRouter.get(
+  "/:id/registrations",
+  requireRole("ORGANIZER"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const roster = await getEventRoster(req.params.id, req.currentUser!.id);
+      res.status(200).json({ data: roster });
     } catch (error) {
       next(error);
     }

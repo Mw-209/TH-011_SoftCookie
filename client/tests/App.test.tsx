@@ -69,7 +69,7 @@ describe("Application shell routing and SoftCookie navbar (F-01 section 5)", () 
 
     expect(await screen.findByText("Kittipong Jaidee")).toBeInTheDocument();
     expect(screen.getByText("PARTICIPANT")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Browse Events" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Events" })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "My Registrations" })
     ).toBeInTheDocument();

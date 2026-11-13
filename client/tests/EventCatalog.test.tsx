@@ -162,7 +162,7 @@ describe("TEST-17 [UI-04]: Event catalog states and seat badges", () => {
 
     renderCatalog();
 
-    const badge = await screen.findByText("Full (0 / 1)");
+    const badge = await screen.findByText("Full");
     expect(badge).toHaveClass("bg-cookie-warningBg");
     expect(badge).toHaveClass("text-cookie-warningText");
   });

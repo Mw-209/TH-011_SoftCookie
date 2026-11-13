@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { healthRouter } from "./routes/health.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { eventRouter } from "./routes/event.routes.js";
+import { registrationRouter } from "./routes/registration.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { ApiError, toErrorBody } from "./lib/errors.js";
 
@@ -24,6 +25,7 @@ app.use(cookieParser());
 app.use("/api", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/events", eventRouter);
+app.use("/api/registrations", registrationRouter);
 
 // Serve built React SPA in single-container production mode (Cloud Run / Docker)
 const clientDistDir = path.resolve(process.cwd(), "..", "client", "dist");

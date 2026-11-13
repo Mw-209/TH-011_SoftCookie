@@ -10,6 +10,7 @@ import SeatBadge from "../components/SeatBadge";
 import ClockIcon from "../components/ClockIcon";
 import MapPinIcon from "../components/MapPinIcon";
 import DeadlineChip from "../components/DeadlineChip";
+import RegistrationPanel from "../components/RegistrationPanel";
 import {
   formatDateTime,
   formatEventDateRange,
@@ -137,6 +138,24 @@ export default function EventDetailPage() {
               </div>
             </dl>
           </section>
+
+          <RegistrationPanel
+            event={event}
+            onRegistered={(remainingSeats) =>
+              // Reflect the claimed seat without a second fetch; the server
+              // already returned the authoritative figure.
+              setEvent((current) =>
+                current
+                  ? {
+                      ...current,
+                      remainingSeats,
+                      activeRegistrationsCount:
+                        current.capacity - remainingSeats,
+                    }
+                  : current
+              )
+            }
+          />
 
           <section className="mb-6">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-cookie-caramel">

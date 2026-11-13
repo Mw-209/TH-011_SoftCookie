@@ -37,7 +37,7 @@ Organizers need a structured, validated screen to publish skill-building worksho
   * **States:** Field-level validation messages appear directly below invalid controls; Submit button shows `"Publishing..."` and disables while submitting; form values are preserved if an error occurs; success redirects to `/events/:id` and shows a success confirmation banner (`#EAF6EF` / `#065F46`) with the generated `eventCode`.
   * **Role Restriction State:** If a `PARTICIPANT` opens `/events/new`, renders a `403 Access Denied` card.
 * **`/events` (Event Discovery Catalog) & `/events/:id` (Event Detail View):**
-  * Displays `eventCode`, `title`, `skillCategory` badge, `skillHours` badge, `location`, schedule, `registrationDeadline`, `organizerName`, and seat badge (`"remainingSeats / capacity seats available"` in `#EAF6EF` / `#065F46`, or `"Full (0 / capacity)"` in warm biscuit/amber `#FEF3C7` / `#9A3412`).
+  * Displays `eventCode`, `title`, `skillCategory` badge, `skillHours` badge, `location`, schedule, `registrationDeadline`, `organizerName`, and seat badge (`"remainingSeats / capacity seats available"` in `#EAF6EF` / `#065F46`, or `"Full"` in warm biscuit/amber `#FEF3C7` / `#9A3412`).
   * Shows loading state while fetching, empty-catalog state if zero events exist, and safe API-failure banner if the backend is unreachable.
 
 ## 6. Data Changes

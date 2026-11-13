@@ -9,6 +9,8 @@ export type ApiErrorCode =
   | "UNAUTHENTICATED"
   | "FORBIDDEN_ROLE"
   | "FORBIDDEN_OWNERSHIP"
+  | "DUPLICATE_REGISTRATION"
+  | "EVENT_FULL"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
@@ -59,6 +61,34 @@ export class ApiError extends Error {
       "UNAUTHENTICATED",
       "Authentication is required for this request."
     );
+  }
+
+  static forbiddenOwnership() {
+    return new ApiError(
+      403,
+      "FORBIDDEN_OWNERSHIP",
+      "You do not have access to this record."
+    );
+  }
+
+  static duplicateRegistration() {
+    return new ApiError(
+      409,
+      "DUPLICATE_REGISTRATION",
+      "You are already registered for this event."
+    );
+  }
+
+  static eventFull() {
+    return new ApiError(
+      409,
+      "EVENT_FULL",
+      "This event is full. No seats remain."
+    );
+  }
+
+  static notFound(what: string) {
+    return new ApiError(404, "NOT_FOUND", what + " not found.");
   }
 
   static forbiddenRole() {

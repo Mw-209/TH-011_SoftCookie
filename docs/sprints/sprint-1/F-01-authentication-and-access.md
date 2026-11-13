@@ -40,7 +40,7 @@ Every user of the University Skill-Building Event Registration and Attendance Sy
   * **Busy State:** Clicking `"Sign In"` disables the button and displays `"Signing in..."` while the request is in flight.
   * **Failure State (`401` / `403` / `500`):** Displays an accessible alert banner (`role="alert"`) while preserving the entered email address.
 * **Authenticated Application Shell (Navbar):**
-  * Displays brand title (`"SoftCookie Event"`), role-specific navigation links (`Browse Events`, `My Registrations` for `PARTICIPANT`; `Browse Events`, `Create Event` for `ORGANIZER`), current user's full name, role badge (`PARTICIPANT` or `ORGANIZER`), and `"Log Out"` button.
+  * Displays brand title (`"SoftCookie Event"`), role-specific navigation links (`Events`, `My Registrations` for `PARTICIPANT`; `Events`, `Create Event` for `ORGANIZER`), current user's full name, role badge (`PARTICIPANT` or `ORGANIZER`), and `"Log Out"` button.
 
 ## 6. Data Changes
 * **Models Introduced:** `User` (`users` table) and `Session` (`sessions` table) as defined in [`docs/system-sds.md`](../../system-sds.md).

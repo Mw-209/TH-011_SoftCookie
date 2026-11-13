@@ -6,6 +6,7 @@ import {
   listEvents,
   validateEventInput,
 } from "../services/event.service.js";
+import { registerForEvent } from "../services/registration.service.js";
 
 export const eventRouter = Router();
 
@@ -44,6 +45,23 @@ eventRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       res.status(200).json({ data: { event: await getEventById(req.params.id) } });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /api/events/:id/registrations — PARTICIPANT only (F-03 7.1, BR-04)
+eventRouter.post(
+  "/:id/registrations",
+  requireRole("PARTICIPANT"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // The body is ignored: identity comes from the session, and status is
+      // always REGISTERED on creation (BR-04).
+      const result = await registerForEvent(req.currentUser!.id, req.params.id);
+
+      res.status(201).json({ data: result });
     } catch (error) {
       next(error);
     }

@@ -143,3 +143,68 @@ test("participant can still browse the catalog and open an event (AC-09)", async
   await expect(page).toHaveURL(/\/events\/[0-9a-f-]{36}$/);
   await expect(page.getByText("EVT-2026-0001")).toBeVisible();
 });
+
+/**
+ * TEST-37 [E2E-06] — AC-16, AC-17, AC-18.
+ * organizer1 views owned Event 1 roster (200), then organizer2 and student1
+ * attempt to open /organizer/events/:event1Id/registrations (403 Access Denied).
+ */
+test("TEST-37 [E2E-06]: organizer roster ownership isolation and access guards (AC-16, AC-17, AC-18)", async ({
+  page,
+}) => {
+  // 1. Organizer 1 signs in and views their own Event 1 roster
+  await signInAndWait(page, ORGANIZER_EMAIL);
+  await page.getByRole("link", { name: "Events", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Full-Stack TypeScript & Testing Workshop" })
+    .click();
+  await expect(page).toHaveURL(/\/events\/[0-9a-f-]{36}$/);
+
+  // Extract the event ID from the URL
+  const eventUrl = page.url();
+  const eventId = eventUrl.split("/").pop()!;
+
+  // Owning organizer sees and clicks "View Registrations Roster"
+  const rosterLink = page.getByRole("link", {
+    name: "View Registrations Roster",
+  });
+  await expect(rosterLink).toBeVisible();
+  await rosterLink.click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`/organizer/events/${eventId}/registrations$`)
+  );
+  await expect(
+    page.getByText("Full-Stack TypeScript & Testing Workshop")
+  ).toBeVisible();
+  await expect(page.getByText("EVT-2026-0001")).toBeVisible();
+
+  // Log out organizer 1
+  await page.getByRole("button", { name: "Log Out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  // 2. Organizer 2 (non-owner) signs in and tries to access Event 1 roster directly (AC-17)
+  await signInAndWait(page, "organizer2@university.edu");
+  await page.goto(`/organizer/events/${eventId}/registrations`);
+  await expect(
+    page.getByRole("heading", { name: "403 Access Denied" })
+  ).toBeVisible();
+  await expect(
+    page.getByText(/you do not have permission to view registrations/i)
+  ).toBeVisible();
+
+  // Log out organizer 2
+  await page.getByRole("button", { name: "Log Out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  // 3. Participant signs in and tries to access Event 1 roster directly (AC-18)
+  await signInAndWait(page, PARTICIPANT_EMAIL);
+  await page.goto(`/organizer/events/${eventId}/registrations`);
+  await expect(
+    page.getByRole("heading", { name: "403 Access Denied" })
+  ).toBeVisible();
+  await expect(
+    page.getByText(/you do not have permission to view registrations/i)
+  ).toBeVisible();
+});
+

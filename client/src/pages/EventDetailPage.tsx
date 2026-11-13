@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { ApiClientError } from "../api/client";
 import {
   fetchEvent,
@@ -21,6 +22,7 @@ import {
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const { user } = useAuth();
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -156,6 +158,25 @@ export default function EventDetailPage() {
               )
             }
           />
+
+          {user?.role === "ORGANIZER" && event.organizerId === user.id && (
+            <div className="mb-6 flex items-center justify-between rounded border border-cookie-border bg-cookie-cream/40 p-4">
+              <div>
+                <h2 className="text-sm font-semibold text-cookie-cocoa">
+                  Organizer Controls
+                </h2>
+                <p className="text-xs text-cookie-cocoa/70">
+                  Inspect participant list and registration details for your event.
+                </p>
+              </div>
+              <Link
+                to={`/organizer/events/${event.id}/registrations`}
+                className="inline-flex items-center rounded bg-cookie-caramel px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cookie-amber"
+              >
+                View Registrations Roster
+              </Link>
+            </div>
+          )}
 
           <section className="mb-6">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-cookie-caramel">

@@ -27,7 +27,7 @@ In accordance with CPE 334 Academic Integrity and AI Policy, the development tea
 | **Requirements & Specifications** | Formatted Markdown tables, checked SRS-SDS traceability consistency. | Defined problem scope, university skill-building business rules (`BR-01`–`BR-05`), and acceptance criteria. |
 | **Backend Engineering** | Scaffolded Express routes, Prisma transaction queries (`SELECT ... FOR UPDATE`), and password hashing utilities. | Reviewed query concurrency logic, confirmed status transitions, validated ownership checks (`BR-05`). |
 | **Frontend Engineering** | Built React components with SoftCookie Warm Bakery theme tokens, responsive layouts (table vs. card stack). | Tested interactive behavior, form validations, accessibility feedback, and responsive layout across devices. |
-| **Automated Testing** | Generated initial test skeletons for Vitest and Playwright (`TEST-01`–`TEST-38`). | Verified test assertions against SRS acceptance criteria; ensured zero tests were skipped or weakened. |
+| **Automated Testing** | Generated initial test skeletons for Vitest and Playwright (`TEST-01`–`TEST-38`). | Verified test assertions against SRS acceptance criteria; ensured test assertions strictly validated required contract behavior without skipping tests. |
 | **Peer Review & Refactoring** | Assisted in drafting review feedback, identifying dead code, and optimizing redundant database queries. | Evaluated review comments, verified fixes against live test suite, and approved pull requests into staging. |
 
 ---

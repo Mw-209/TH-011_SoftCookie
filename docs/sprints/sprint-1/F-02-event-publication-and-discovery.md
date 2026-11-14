@@ -106,26 +106,26 @@ Organizers need a structured, validated screen to publish skill-building worksho
 
 ---
 
-## 9. Planned Automated Tests (Software Test Specification for F-02)
+## 9. Automated Tests (Software Test Specification for F-02)
 
 | Test ID | Type ID & Level | Requirement / AC | What It Tests (Precondition & Action) | Expected Result | Automated Test File | Final Status |
 | :--- | :---: | :---: | :--- | :--- | :--- | :---: |
-| **TEST-10** | `UNIT-02` (Unit) | `AC-06`, `BR-01` | Official `eventCode` generator format (`EVT-YYYY-NNNN`) and valid event input normalization/trimming. | Generates unique `EVT-2026-NNNN` code and trims title/location strings cleanly. | `server/tests/unit/event-rules.unit.test.ts` | Planned |
-| **TEST-11** | `UNIT-03` (Unit) | `AC-07`, `BR-01` | Event domain validator for `capacity <= 0`, `capacity: 1.5`, `skillHours <= 0`, short title, and `registrationDeadline > startAt` (**TDD Target #1**). | Rejects each invalid boundary input with `VALIDATION_ERROR` and field-specific messages. | `server/tests/unit/event-rules.unit.test.ts` | Planned |
-| **TEST-12** | `API-06` (API) | `AC-06`, `FR-02` | `POST /api/events` as `organizer1` with valid payload (`capacity: 25`, `skillHours: 3`). | Returns `201 Created`; persists event in PostgreSQL with `eventCode`, `organizerId = organizer1.id`, `remainingSeats: 25`. | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-13** | `API-07` (API) | `AC-07`, `BR-01` | `POST /api/events` as `organizer1` with `capacity: 0`, `capacity: -5`, and `registrationDeadline > startAt`. | Returns `400 Bad Request` (`VALIDATION_ERROR`); zero new rows stored in `events` table. | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-14** | `API-08` (API) | `AC-08`, `BR-04`, `NFR-02` | `POST /api/events` attempted by `student1` (`PARTICIPANT`) and by an unauthenticated client. | Returns `403 Forbidden` (`FORBIDDEN_ROLE`) for `student1` and `401 Unauthorized` for anonymous client. | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-15** | `API-09` (API) | `AC-09`, `FR-03`, `NFR-04` | `GET /api/events` and `GET /api/events/:id` (plus non-existent ID check). | Returns `200 OK` (`< 500 ms`) with seeded events and accurate `remainingSeats`; returns `404` for unknown ID. | `server/tests/api/events.api.test.ts` | Planned |
-| **TEST-16** | `UI-03` (UI) | `AC-07` | `CreateEvent` form component: read-only vs. editable styling, required asterisks (`*`), field validation errors, busy state, and form value preservation on error. | Displays inline errors below invalid fields, disables button while submitting, and preserves entered text on failure. | `client/tests/CreateEvent.test.tsx` | Planned |
-| **TEST-17** | `UI-04` (UI) | `AC-09` | `EventCatalog` & `EventDetail` components: loading state, empty state, API error state, and seat availability badges. | Renders loading indicator, empty catalog message when `[]`, and accurate `remainingSeats / capacity` badges. | `client/tests/EventCatalog.test.tsx` | Planned |
-| **TEST-18** | `E2E-02` (E2E) | `AC-06`, `AC-09` | Organizer logs in $\rightarrow$ opens `/events/new` $\rightarrow$ submits valid event $\rightarrow$ verifies generated `eventCode` and detail view in `/events/:id`. | New event is saved in PostgreSQL, shows official `EVT-2026-NNNN` code, and appears in `/events` catalog. | `e2e/tests/organizer-journey.spec.ts` | Planned |
-| **TEST-19** | `E2E-03` (E2E) | `AC-08`, `NFR-02` | Participant logs in and navigates directly to `/events/new`. | Create Event action is hidden in navbar and direct navigation renders `403 Access Denied`. | `e2e/tests/auth-and-access.spec.ts` | Planned |
+| **TEST-10** | `UNIT-02` (Unit) | `AC-06`, `BR-01` | Official `eventCode` generator format (`EVT-YYYY-NNNN`) and valid event input normalization/trimming. | Generates unique `EVT-2026-NNNN` code and trims title/location strings cleanly. | `server/tests/unit/event-rules.unit.test.ts` | Passed |
+| **TEST-11** | `UNIT-03` (Unit) | `AC-07`, `BR-01` | Event domain validator for `capacity <= 0`, `capacity: 1.5`, `skillHours <= 0`, short title, and `registrationDeadline > startAt` (**TDD Target #1**). | Rejects each invalid boundary input with `VALIDATION_ERROR` and field-specific messages. | `server/tests/unit/event-rules.unit.test.ts` | Passed |
+| **TEST-12** | `API-06` (API) | `AC-06`, `FR-02` | `POST /api/events` as `organizer1` with valid payload (`capacity: 25`, `skillHours: 3`). | Returns `201 Created`; persists event in PostgreSQL with `eventCode`, `organizerId = organizer1.id`, `remainingSeats: 25`. | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-13** | `API-07` (API) | `AC-07`, `BR-01` | `POST /api/events` as `organizer1` with `capacity: 0`, `capacity: -5`, and `registrationDeadline > startAt`. | Returns `400 Bad Request` (`VALIDATION_ERROR`); zero new rows stored in `events` table. | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-14** | `API-08` (API) | `AC-08`, `BR-04`, `NFR-02` | `POST /api/events` attempted by `student1` (`PARTICIPANT`) and by an unauthenticated client. | Returns `403 Forbidden` (`FORBIDDEN_ROLE`) for `student1` and `401 Unauthorized` for anonymous client. | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-15** | `API-09` (API) | `AC-09`, `FR-03`, `NFR-04` | `GET /api/events` and `GET /api/events/:id` (plus non-existent ID check). | Returns `200 OK` (`< 500 ms`) with seeded events and accurate `remainingSeats`; returns `404` for unknown ID. | `server/tests/api/events.api.test.ts` | Passed |
+| **TEST-16** | `UI-03` (UI) | `AC-07` | `CreateEvent` form component: read-only vs. editable styling, required asterisks (`*`), field validation errors, busy state, and form value preservation on error. | Displays inline errors below invalid fields, disables button while submitting, and preserves entered text on failure. | `client/tests/CreateEvent.test.tsx` | Passed |
+| **TEST-17** | `UI-04` (UI) | `AC-09` | `EventCatalog` & `EventDetail` components: loading state, empty state, API error state, and seat availability badges. | Renders loading indicator, empty catalog message when `[]`, and accurate `remainingSeats / capacity` badges. | `client/tests/EventCatalog.test.tsx` | Passed |
+| **TEST-18** | `E2E-02` (E2E) | `AC-06`, `AC-09` | Organizer logs in $\rightarrow$ opens `/events/new` $\rightarrow$ submits valid event $\rightarrow$ verifies generated `eventCode` and detail view in `/events/:id`. | New event is saved in PostgreSQL, shows official `EVT-2026-NNNN` code, and appears in `/events` catalog. | `e2e/tests/organizer-journey.spec.ts` | Passed |
+| **TEST-19** | `E2E-03` (E2E) | `AC-08`, `NFR-02` | Participant logs in and navigates directly to `/events/new`. | Create Event action is hidden in navbar and direct navigation renders `403 Access Denied`. | `e2e/tests/auth-and-access.spec.ts` | Passed |
 
 ---
 
 ## 10. Feature Definition of Done
-- [ ] `Event` model migrated to PostgreSQL and seeded with 3 reproducible events (`EVT-2026-0001` to `0003`).
-- [ ] Unit validation tests (`TEST-11` / `UNIT-03`) written first (TDD Red $\rightarrow$ Green).
-- [ ] `POST /api/events`, `GET /api/events`, `GET /api/events/:id` and SoftCookie Warm Bakery UI screens (`/events`, `/events/new`, `/events/:id`) implemented.
-- [ ] All planned automated tests (`TEST-10`–`TEST-19`) passing.
-- [ ] Peer-reviewed PR merged into `sprint1-staging`.
+- [x] `Event` model migrated to PostgreSQL and seeded with 3 reproducible events (`EVT-2026-0001` to `0003`).
+- [x] Unit validation tests (`TEST-11` / `UNIT-03`) written first (TDD Red $\rightarrow$ Green).
+- [x] `POST /api/events`, `GET /api/events`, `GET /api/events/:id` and SoftCookie Warm Bakery UI screens (`/events`, `/events/new`, `/events/:id`) implemented.
+- [x] All planned automated tests (`TEST-10`–`TEST-19`) passing.
+- [x] Peer-reviewed PR merged into `sprint1-staging`.

@@ -97,23 +97,23 @@ Organizers must be able to open their own published workshops and inspect the li
 
 ---
 
-## 9. Planned Automated Tests (Software Test Specification for F-04 & Cross-Cutting UI)
+## 9. Automated Tests (Software Test Specification for F-04 & Cross-Cutting UI)
 
 | Test ID | Type ID & Level | Requirement / AC | What It Tests (Precondition & Action) | Expected Result | Automated Test File | Final Status |
 | :--- | :---: | :---: | :--- | :--- | :--- | :---: |
-| **TEST-32** | `API-17` (API) | `AC-16`, `FR-06` | `organizer1` requests `GET /api/events/:event1Id/registrations` for owned Event 1 (with 1 registered participant and with 0 participants). | Returns `200 OK` with `student1`'s registration details (`REG-2026-NNNN`, `name`, `email`, `status: "REGISTERED"`). | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-33** | `API-18` (API - Ownership) | `AC-17`, `BR-05`, `NFR-02` | `organizer2` (non-owner `ORGANIZER`) requests `GET /api/events/:event1Id/registrations` (**TDD Target #4b**). | Rejects with `403 Forbidden` (`FORBIDDEN_OWNERSHIP`) and returns no participant roster data. | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-34** | `API-19` (API - Role) | `AC-18`, `BR-04`, `NFR-02` | `student1` (`PARTICIPANT`) requests `GET /api/events/:event1Id/registrations`. | Rejects with `403 Forbidden` (`FORBIDDEN_ROLE`) and returns no participant roster data. | `server/tests/api/organizer-roster.api.test.ts` | Planned |
-| **TEST-35** | `UI-06` (UI) | `AC-16`, `AC-17` | `OrganizerRoster` component states: populated roster table, empty roster state (`"No participants..."`), and `403 Access Denied` state. | Renders participant rows accurately, shows empty state when `[]`, and displays `403` alert when forbidden. | `client/tests/OrganizerRoster.test.tsx` | Planned |
-| **TEST-36** | `UI-07` (UI Style) | `AC-19`, `NFR-05` | SoftCookie Warm Bakery UI style assertions across forms, badges, read-only vs. editable fields, and required field asterisks (`*`). | Verifies `#603928` header, `#A85F34` primary styling, `#F0F0F0` read-only fields, red `*` markers, and text+color badges. | `client/tests/ResponsiveAndTheme.test.tsx` | Planned |
-| **TEST-37** | `E2E-06` (E2E) | `AC-16`, `AC-17`, `AC-18` | `organizer1` views owned Event 1 roster (`200`), then `organizer2` and `student1` attempt to open `/organizer/events/:event1Id/registrations`. | `organizer1` sees `student1` on roster; `organizer2` and `student1` both receive `403 Access Denied`. | `e2e/tests/auth-and-access.spec.ts` | Planned |
-| **TEST-38** | `E2E-07` (E2E - Responsive) | `AC-19`, `AC-20`, `NFR-05` | Playwright multi-viewport check at Desktop (`1280x800`), Tablet (`820x1180`), and Mobile (`375x812`) across major Sprint 1 screens. | Zero horizontal overflow (`scrollWidth <= clientWidth`), visible controls, and clean responsive layout on all 3 viewports. | `e2e/tests/responsive-and-states.spec.ts` | Planned |
+| **TEST-32** | `API-17` (API) | `AC-16`, `FR-06` | `organizer1` requests `GET /api/events/:event1Id/registrations` for owned Event 1 (with 1 registered participant and with 0 participants). | Returns `200 OK` with `student1`'s registration details (`REG-2026-NNNN`, `name`, `email`, `status: "REGISTERED"`). | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-33** | `API-18` (API - Ownership) | `AC-17`, `BR-05`, `NFR-02` | `organizer2` (non-owner `ORGANIZER`) requests `GET /api/events/:event1Id/registrations` (**TDD Target #4b**). | Rejects with `403 Forbidden` (`FORBIDDEN_OWNERSHIP`) and returns no participant roster data. | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-34** | `API-19` (API - Role) | `AC-18`, `BR-04`, `NFR-02` | `student1` (`PARTICIPANT`) requests `GET /api/events/:event1Id/registrations`. | Rejects with `403 Forbidden` (`FORBIDDEN_ROLE`) and returns no participant roster data. | `server/tests/api/organizer-roster.api.test.ts` | Passed |
+| **TEST-35** | `UI-06` (UI) | `AC-16`, `AC-17` | `OrganizerRoster` component states: populated roster table, empty roster state (`"No participants..."`), and `403 Access Denied` state. | Renders participant rows accurately, shows empty state when `[]`, and displays `403` alert when forbidden. | `client/tests/OrganizerRoster.test.tsx` | Passed |
+| **TEST-36** | `UI-07` (UI Style) | `AC-19`, `NFR-05` | SoftCookie Warm Bakery UI style assertions across forms, badges, read-only vs. editable fields, and required field asterisks (`*`). | Verifies `#603928` header, `#A85F34` primary styling, `#F0F0F0` read-only fields, red `*` markers, and text+color badges. | `client/tests/ResponsiveAndTheme.test.tsx` | Passed |
+| **TEST-37** | `E2E-06` (E2E) | `AC-16`, `AC-17`, `AC-18` | `organizer1` views owned Event 1 roster (`200`), then `organizer2` and `student1` attempt to open `/organizer/events/:event1Id/registrations`. | `organizer1` sees `student1` on roster; `organizer2` and `student1` both receive `403 Access Denied`. | `e2e/tests/auth-and-access.spec.ts` | Passed |
+| **TEST-38** | `E2E-07` (E2E - Responsive) | `AC-19`, `AC-20`, `NFR-05` | Playwright multi-viewport check at Desktop (`1280x800`), Tablet (`820x1180`), and Mobile (`375x812`) across major Sprint 1 screens. | Zero horizontal overflow (`scrollWidth <= clientWidth`), visible controls, and clean responsive layout on all 3 viewports. | `e2e/tests/responsive-and-states.spec.ts` | Passed |
 
 ---
 
 ## 10. Feature Definition of Done
-- [ ] Cross-organizer ownership rejection test (`TEST-33` / `API-18`) written first (TDD Red $\rightarrow$ Green).
-- [ ] `GET /api/events/:id/registrations` and `/organizer/events/:id/registrations` implemented.
-- [ ] Multi-viewport responsive and SoftCookie Warm Bakery theme tests (`TEST-36`, `TEST-38`) implemented and passing.
-- [ ] All planned automated tests (`TEST-32`–`TEST-38`) passing.
-- [ ] Peer-reviewed PR merged into `sprint1-staging` and integrated into `main`.
+- [x] Cross-organizer ownership rejection test (`TEST-33` / `API-18`) written first (TDD Red $\rightarrow$ Green).
+- [x] `GET /api/events/:id/registrations` and `/organizer/events/:id/registrations` implemented.
+- [x] Multi-viewport responsive and SoftCookie Warm Bakery theme tests (`TEST-36`, `TEST-38`) implemented and passing.
+- [x] All planned automated tests (`TEST-32`–`TEST-38`) passing.
+- [x] Peer-reviewed PR merged into `sprint1-staging` and integrated into `main`.

@@ -98,24 +98,24 @@ Every user of the University Skill-Building Event Registration and Attendance Sy
 
 ---
 
-## 9. Planned Automated Tests (Software Test Specification for F-01)
+## 9. Automated Tests (Software Test Specification for F-01)
 
 | Test ID | Type ID & Level | Requirement / AC | What It Tests (Precondition & Action) | Expected Result | Automated Test File | Final Status |
 | :--- | :---: | :---: | :--- | :--- | :--- | :---: |
-| **TEST-01** | `UNIT-01` (Unit) | `AC-05`, `NFR-01` | Password hashing & verification helper and seeded DB password format check. | Hash matches `/^\$2[ab]\$10\$/`, never equals plaintext, and verifies via `bcrypt.compare`. | `server/tests/unit/password-and-auth.unit.test.ts` | Planned |
-| **TEST-02** | `API-01` (API) | `NFR-04` | Health (`GET /api/health`) & readiness (`GET /api/ready`) probes with PostgreSQL connected vs. unreachable. | `/api/health` returns `200 OK` `{ status: "ok" }`; `/api/ready` returns `200 OK` `{ status: "ready", db: "connected" }` (`< 500 ms`) or `503` `{ status: "not_ready" }`. | `server/tests/api/health.api.test.ts` | Planned |
-| **TEST-03** | `API-02` (API) | `AC-01`, `NFR-01`, `NFR-04` | Valid login for `organizer1@university.edu` and `student1@university.edu`. | Returns `200 OK` (`< 500 ms`), sets `HttpOnly` cookie, persists DB `Session`, omits `passwordHash`. | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-04** | `API-03` (API) | `AC-02`, `NFR-01` | Invalid login (wrong password, unknown email, empty fields, and `inactive@university.edu`). | Rejects with `401` / `400` / `403`; zero `Session` rows created in PostgreSQL. | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-05** | `API-04` (API) | `AC-03`, `NFR-01` | `GET /api/auth/me` with valid session cookie vs. missing/invalid/expired token. | Valid cookie returns `200 OK` with user identity; missing/invalid token returns `401 Unauthorized`. | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-06** | `API-05` (API) | `AC-04`, `NFR-01` | `POST /api/auth/logout` followed by replay of old session token on `GET /api/auth/me`. | Logout returns `200 OK` and deletes DB `Session`; replayed token returns `401 Unauthorized`. | `server/tests/api/auth.api.test.ts` | Planned |
-| **TEST-07** | `UI-01` (UI) | `AC-01`, `AC-02` | Login form component rendering, required asterisks (`*`), busy state (`"Signing in..."`), and field error placement. | Labels and red asterisks render; submit button disables while busy; validation error appears below field. | `client/tests/Login.test.tsx` | Planned |
-| **TEST-08** | `UI-02` (UI) | `AC-02` | Login failure preserves entered email address and displays accessible alert banner. | On `401` response, alert banner is shown and email input retains the user's typed address. | `client/tests/Login.test.tsx` | Planned |
-| **TEST-09** | `E2E-01` (E2E) | `AC-01`, `AC-04` | Complete browser login $\rightarrow$ role navbar display $\rightarrow$ logout $\rightarrow$ protected route redirect flow. | User logs in, sees name & role badge in SoftCookie Warm Bakery navbar, logs out, and is redirected to `/login`. | `e2e/tests/auth-and-access.spec.ts` | Planned |
+| **TEST-01** | `UNIT-01` (Unit) | `AC-05`, `NFR-01` | Password hashing & verification helper and seeded DB password format check. | Hash matches `/^\$2[ab]\$10\$/`, never equals plaintext, and verifies via `bcrypt.compare`. | `server/tests/unit/password-and-auth.unit.test.ts` | Passed |
+| **TEST-02** | `API-01` (API) | `NFR-04` | Health (`GET /api/health`) & readiness (`GET /api/ready`) probes with PostgreSQL connected vs. unreachable. | `/api/health` returns `200 OK` `{ status: "ok" }`; `/api/ready` returns `200 OK` `{ status: "ready", db: "connected" }` (`< 500 ms`) or `503` `{ status: "not_ready" }`. | `server/tests/api/health.api.test.ts` | Passed |
+| **TEST-03** | `API-02` (API) | `AC-01`, `NFR-01`, `NFR-04` | Valid login for `organizer1@university.edu` and `student1@university.edu`. | Returns `200 OK` (`< 500 ms`), sets `HttpOnly` cookie, persists DB `Session`, omits `passwordHash`. | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-04** | `API-03` (API) | `AC-02`, `NFR-01` | Invalid login (wrong password, unknown email, empty fields, and `inactive@university.edu`). | Rejects with `401` / `400` / `403`; zero `Session` rows created in PostgreSQL. | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-05** | `API-04` (API) | `AC-03`, `NFR-01` | `GET /api/auth/me` with valid session cookie vs. missing/invalid/expired token. | Valid cookie returns `200 OK` with user identity; missing/invalid token returns `401 Unauthorized`. | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-06** | `API-05` (API) | `AC-04`, `NFR-01` | `POST /api/auth/logout` followed by replay of old session token on `GET /api/auth/me`. | Logout returns `200 OK` and deletes DB `Session`; replayed token returns `401 Unauthorized`. | `server/tests/api/auth.api.test.ts` | Passed |
+| **TEST-07** | `UI-01` (UI) | `AC-01`, `AC-02` | Login form component rendering, required asterisks (`*`), busy state (`"Signing in..."`), and field error placement. | Labels and red asterisks render; submit button disables while busy; validation error appears below field. | `client/tests/Login.test.tsx` | Passed |
+| **TEST-08** | `UI-02` (UI) | `AC-02` | Login failure preserves entered email address and displays accessible alert banner. | On `401` response, alert banner is shown and email input retains the user's typed address. | `client/tests/Login.test.tsx` | Passed |
+| **TEST-09** | `E2E-01` (E2E) | `AC-01`, `AC-04` | Complete browser login $\rightarrow$ role navbar display $\rightarrow$ logout $\rightarrow$ protected route redirect flow. | User logs in, sees name & role badge in SoftCookie Warm Bakery navbar, logs out, and is redirected to `/login`. | `e2e/tests/auth-and-access.spec.ts` | Passed |
 
 ---
 
 ## 10. Feature Definition of Done
-- [ ] `User` and `Session` models migrated to PostgreSQL; idempotent `server/prisma/seed.ts` populates active and inactive demo users from environment config.
-- [ ] `GET /api/health`, `GET /api/ready`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`, and `/login` UI implemented per contract.
-- [ ] All planned automated tests (`TEST-01`–`TEST-09`) implemented in their specified test files and passing.
-- [ ] Peer-reviewed PR merged into `sprint1-staging`.
+- [x] `User` and `Session` models migrated to PostgreSQL; idempotent `server/prisma/seed.ts` populates active and inactive demo users from environment config.
+- [x] `GET /api/health`, `GET /api/ready`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`, and `/login` UI implemented per contract.
+- [x] All planned automated tests (`TEST-01`–`TEST-09`) implemented in their specified test files and passing.
+- [x] Peer-reviewed PR merged into `sprint1-staging`.

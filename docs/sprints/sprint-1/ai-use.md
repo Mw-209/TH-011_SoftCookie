@@ -1,0 +1,18 @@
+# Sprint 1 — AI Use and Reflection
+
+**LLM/agent used:** Google Antigravity (Gemini / Claude)
+
+## Selected key prompts (6–10)
+| # | Prompt (summarised) | What we did with the result |
+|---|---------------------|----------------------------|
+| 1 | Help structure the Sprint 1 engineering contracts (`srs.md`, `system-sds.md`, `F-01`–`F-04`) and set up the project foundation with Prisma, PostgreSQL in Docker, and idempotent seed data (Issues #1 & #2). | Reviewed the generated database schema, constraints, and seed script, and verified that `/api/health` and `/api/ready` probes passed against the local PostgreSQL container. |
+| 2 | Implement and check Issue #3 (`F-01` authentication, PostgreSQL sessions, and RBAC guards) to make sure all login, logout, and role checks work properly. | Tested login and logout flows with demo accounts, verified `HttpOnly` cookie sessions and inactive-user rejection (`403`), and ran `TEST-01`–`TEST-09`. |
+| 3 | Implement and check Issue #4 (`F-02` event creation and discovery) and adjust the UI wording (use `Events` instead of `Browse Events` and shorten the full-seat badge from `Full (0 / 1)` to just `Full`). | Inspected the updated catalog and detail pages in the browser, checked form validation on `/events/new`, and updated the UI tests (`TEST-10`–`TEST-19`) to match. |
+| 4 | Implement and check Issue #5 (`F-03` event registration and `My Registrations`) with concurrency protection so two people cannot take the last seat at the same time. | Reviewed the `SELECT ... FOR UPDATE` transaction in `registration.service.ts` and ran the parallel race test (`TEST-25`) and registration suite (`TEST-20`–`TEST-31`). |
+| 5 | We finished up to Issue #5; what do we need to build for Issue #6 (`F-04` organizer registration roster) and what states must it demonstrate? | Created branch `feature/6-f04-organizer-roster` from `sprint1-staging`, implemented the roster API and page, and manually tested owner access (`200`), empty state, and `403` access denied states. |
+| 6 | Add a SoftCookie favicon to the browser tab and remove the white background so it looks clean in both light and dark tabs. | Embedded the transparent cookie icon as a Base64 PNG in `client/index.html` and verified how it looked in the browser tab. |
+| 7 | Review Issue #6 (PR #13) against the `F-04` contract, summarize the cleanup feedback, and refactor the code based on the peer review comments. | Posted the 4 review items on PR #13, refactored `getEventRoster` to remove the duplicate query and reuse `ACTIVE_REGISTRATION_STATUSES`, and confirmed all server and client tests passed. |
+| 8 | Run the full E2E and responsive check for Issue #7 across Desktop, Tablet, and Mobile, and capture screenshots of all screens into `artifacts/sprint-1/`. | Ran all Unit, API, UI, and Playwright E2E tests (`TEST-01`–`TEST-38`), verified the 18 screenshots showed populated data with zero horizontal overflow, and updated the Sprint 1 release docs. |
+
+## Reflection
+Our prompts worked best when we gave the agent clear context about which Issue and feature contract (`F-01`–`F-04`) we were working on and asked it to verify specific user states and test cases rather than generating everything blindly. We still had to adjust and correct the agent's output in several places—for example, deciding ourselves that a full event should read simply `Full`, because the agent's `Full (0 / 1)` put a zero first and made it look like nobody had registered, and refactoring `getEventRoster` during PR #13 review because the agent initially queried the `registrations` table twice and duplicated the active-status array instead of reusing `ACTIVE_REGISTRATION_STATUSES`.

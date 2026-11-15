@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const ARTIFACTS_DIR = path.join(PROJECT_ROOT, "artifacts", "sprint-1");
-const DOCS_DIR = path.join(PROJECT_ROOT, "docs", "screenshots");
 
 const DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD || "LocalDemoPass123!";
 const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:5173";
@@ -27,18 +26,13 @@ async function signIn(page: Page, email: string) {
 
 async function saveScreenshot(page: Page, filename: string) {
   const artifactPath = path.join(ARTIFACTS_DIR, filename);
-  const docsPath = path.join(DOCS_DIR, filename);
   await page.screenshot({ path: artifactPath, fullPage: true });
-  fs.copyFileSync(artifactPath, docsPath);
   console.log(`Saved ${filename}`);
 }
 
 async function capture() {
   if (!fs.existsSync(ARTIFACTS_DIR)) {
     fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(DOCS_DIR)) {
-    fs.mkdirSync(DOCS_DIR, { recursive: true });
   }
 
   const browser = await chromium.launch();
@@ -118,7 +112,7 @@ async function capture() {
   }
 
   await browser.close();
-  console.log(`\nAll screenshots successfully captured in ${ARTIFACTS_DIR} and ${DOCS_DIR}`);
+  console.log(`\nAll screenshots successfully captured in ${ARTIFACTS_DIR}`);
 }
 
 capture().catch((err) => {

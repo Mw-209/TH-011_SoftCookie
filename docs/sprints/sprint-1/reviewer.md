@@ -17,14 +17,23 @@
 **Reviewer comment I received:**  
 - **PR #8:** *"Alright, I'll merge our work now!"*
 - **PR #9:** *"good"*
-- **PR #13:** *"Reviewed on 4c9b18d — F-04 contract, ownership/role guards, and all tests pass cleanly. Just a few quick cleanups before merging: 1. Drop unused ClockIcon import. 2. Avoid querying registrations twice in getEventRoster. 3. Reuse ACTIVE_REGISTRATION_STATUSES from registration.service. 4. Type EventRosterRegistration.status as RegistrationStatus and use ApiError.notFound."*
-- **PR #14:** *(Under active review — resolving review items on README UTF-8 encoding, populated screenshot states, real reviewer comments, and feature contract status alignment)*
+- **PR #13:** *Unused import (client/src/pages/OrganizerRosterPage.tsx:8): Drop the unused ClockIcon import.
+Avoid querying registrations twice (server/src/services/event.service.ts:375-408): getEventRoster loads registrations in event.findUnique just to count active rows, then queries them again in registration.findMany. We can drop include from findUnique and compute activeRegistrationsCount from the findMany result instead.
+Single source of truth for active statuses (server/src/services/event.service.ts:208, 364): Reuse ACTIVE_REGISTRATION_STATUSES from registration.service.ts:13 in both places instead of duplicating ["REGISTERED", "ATTENDED"].
+Minor consistency in event.service.ts: Type EventRosterRegistration.status as RegistrationStatus (line 337) and use ApiError.notFound("Event not found.") (line 385).*
+- **PR #14:** *Let's create a separate artifacts/sprint-1/ folder to store all the screenshots.*
 
 **How I responded:**  
-- **PR #8:** *Merged into `sprint1-staging`.*
-- **PR #9:** *Merged into `sprint1-staging`.*
-- **PR #13:** *"Thanks for the review! Addressed all 4 points in commit `4312936`: dropped unused ClockIcon, optimized getEventRoster query to run once, reused ACTIVE_REGISTRATION_STATUSES as single source of truth, and updated typing/errors. All 107 server and 73 client tests pass!"*
-- **PR #14:** *(Addressing feedback commits on `feature/7-e2e-and-release-polish`)*
+- **PR #8:** *OKay*
+- **PR #9:** *Thanks a lot for checking!*
+- **PR #13:** *"Thanks for the review! All 4 points have been addressed in commit 4312936 and pushed:
+
+Unused import dropped: Removed unused ClockIcon import from client/src/pages/OrganizerRosterPage.tsx.
+Query optimization: Removed include: { registrations } from event.findUnique; activeRegistrationsCount is now computed directly from the registration.findMany result in memory.
+Single source of truth: Reused ACTIVE_REGISTRATION_STATUSES from registration.service.ts across eventInclude and getEventRoster, dropping the duplicated ACTIVE_STATUSES array.
+Consistency & Typing: Typed EventRosterRegistration.status as RegistrationStatus enum and updated not-found rejection to use ApiError.notFound("Event").
+All test suites continue to pass cleanly (Server: 107/107, Client: 73/73). Ready for re-review*
+- **PR #14:** *okay*
 
 ---
 
@@ -42,9 +51,9 @@
 - **PR #12:** *"Everything looks good."*
 
 **Partner's response:**  
-- **PR #10:** *Merged into `sprint1-staging`.*
-- **PR #11:** *Merged into `sprint1-staging`.*
-- **PR #12:** *Merged into `sprint1-staging`.*
+- **PR #10:** *Thanks*
+- **PR #11:** *Okay*
+- **PR #12:** *Okay*
 
 ---
 

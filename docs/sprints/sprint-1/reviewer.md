@@ -18,7 +18,7 @@ seven Sprint 1 issues passed through both pairs of eyes before it reached
 | [4](https://github.com/Mw-209/TH-011_SoftCookie/issues/4) | [11](https://github.com/Mw-209/TH-011_SoftCookie/pull/11) | `feature/4-f02-event-publication`    | Thitikan | Kusumas  | Approved |
 | [5](https://github.com/Mw-209/TH-011_SoftCookie/issues/5) | [12](https://github.com/Mw-209/TH-011_SoftCookie/pull/12) | `feature/5-f03-event-registration`   | Thitikan | Kusumas  | Approved |
 | [6](https://github.com/Mw-209/TH-011_SoftCookie/issues/6) | [13](https://github.com/Mw-209/TH-011_SoftCookie/pull/13) | `feature/6-f04-organizer-roster`     | Kusumas  | Thitikan | Approved |
-| [7](https://github.com/Mw-209/TH-011_SoftCookie/issues/7) | [14](https://github.com/Mw-209/TH-011_SoftCookie/pull/14) | `feature/7-e2e-and-release-polish`   | Kusumas  | Thitikan | In Review |
+| [7](https://github.com/Mw-209/TH-011_SoftCookie/issues/7) | [14](https://github.com/Mw-209/TH-011_SoftCookie/pull/14) | `feature/7-e2e-and-release-polish`   | Kusumas  | Thitikan | Approved |
 
 #### Issue 1 : [Docs] Sprint 1 Engineering Baseline & Feature Contracts (Parts A-E) PR#8
 ``` 
@@ -87,6 +87,8 @@ Thitikan's review comment : good good, I will merge!
 ``` 
 Thitikan's review comment : Let's create a separate artifacts/sprint-1/ folder to store all the screenshots.
 Kusumas's response : okay
+Thitikan's review comment : great
+Kusumas's response : Thanks for the feedback and for merging!
 ```
 
 ---

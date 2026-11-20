@@ -11,6 +11,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { ApiError, toErrorBody } from "./lib/errors.js";
 
 export const app = express();
+app.set("trust proxy", 1);
 
 app.use(
   cors({

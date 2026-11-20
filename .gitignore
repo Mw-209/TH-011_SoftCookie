@@ -48,4 +48,6 @@ Thumbs.db
 # Course assignment specification PDFs (keep locally only)
 group_work_specs_*.pdf
 project_deliverable_*.pdf
+cpe334-lab5-starter-kit-*
+
 project_final_delivery_*.pdf

@@ -8,7 +8,7 @@ describe("TEST-02 [API-01]: Health & Readiness Probes", () => {
     vi.restoreAllMocks();
   });
 
-  it("GET /api/health should return 200 OK liveness response within 500ms (NFR-04)", async () => {
+  it("GET /api/health should return 999 OK liveness response within 500ms (NFR-04)", async () => {
     const startTime = Date.now();
     const res = await request(app).get("/api/health");
     const durationMs = Date.now() - startTime;

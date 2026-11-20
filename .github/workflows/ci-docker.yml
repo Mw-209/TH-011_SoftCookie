@@ -1,0 +1,83 @@
+name: CI & Docker Build
+
+on:
+  workflow_call:
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Required check name referenced by main branch Ruleset (Episode 6) and deploy.yml (Episode 7)
+  test-and-docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_postgres_password
+          POSTGRES_DB: event_registration_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:ci_postgres_password@localhost:5432/event_registration_ci?schema=public
+      SESSION_COOKIE_NAME: event_sys_session
+      SESSION_TTL_HOURS: "24"
+      SEED_DEMO_DATA: "true"
+      DEMO_USER_PASSWORD: ci-ephemeral-demo-password
+      CORS_ORIGIN: http://localhost:5173
+      PORT: "3000"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check deploy scripts (offline)
+        run: |
+          bash -n deploy/deploy.sh
+          bash -n deploy/release.sh
+          DRY_RUN=1 bash deploy/deploy.sh --demo
+          python3 -m py_compile deploy/smoke_test.py
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install, migrate, seed, build, and test backend
+        working-directory: server
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run prisma:seed
+          npm run build
+          npm test
+
+      - name: Install, build, and test frontend
+        working-directory: client
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Verify Docker build
+        run: docker build --tag softcookie-events:ci .
+

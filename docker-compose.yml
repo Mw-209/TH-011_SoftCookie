@@ -27,11 +27,13 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/event_registration_db?schema=public
-      - SESSION_COOKIE_NAME=event_sys_session
-      - SESSION_TTL_HOURS=24
-      - CORS_ORIGIN=http://localhost:3000
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-event_sys_session}
+      - SESSION_TTL_HOURS=${SESSION_TTL_HOURS:-24}
+      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-true}
+      - DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD:-}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=${PORT:-3000}
     depends_on:
       db:
         condition: service_healthy

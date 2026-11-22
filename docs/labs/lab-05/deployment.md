@@ -94,41 +94,106 @@ npm run test:client
 
 > **Important:** In the shared course project, infrastructure and IAM are pre-provisioned by the course portal. Never run `teardown.sh`, never modify project IAM, and use `--update-env-vars` (never `--set-env-vars`) when changing individual environment variables.
 
+### Migration Job Secret Configuration
+To enable the migration job (`s55fa7796-migrate`) to seed demo accounts with password hashing when `SEED_DEMO_DATA=true` (or when running `--demo`), the secret `s55fa7796-demo-password` is bound to the job environment variable `DEMO_USER_PASSWORD`:
+```bash
+gcloud run jobs update s55fa7796-migrate \
+  --project=cpe-se-course-2026 \
+  --region=asia-southeast1 \
+  --update-secrets="DEMO_USER_PASSWORD=s55fa7796-demo-password:latest"
+```
+
 ---
 
-## 5. Repeatable Release Procedure & Commit Verification
+## 5. Repeatable Release Procedure & Automated CD Pipeline
 
 ### Release Workflow
 1. Create a GitHub Issue labeled `lab5` describing the change.
-2. Branch from `staging` (`git switch staging && git switch -c feature/<issue>-<slug>`).
+2. Branch from `staging` (`git switch staging && git switch -c lab5/<issue>-<slug>`).
 3. Push the feature branch and open a Pull Request into `staging`.
-4. Ensure CI (`test-and-docker`) passes and a **teammate** reviews and approves the PR, then merge into `staging`.
+4. Ensure CI status check (`test-and-docker`) passes and a **teammate** reviews and approves the PR, then merge into `staging`.
 5. Open a Release Pull Request from `staging` into `main`.
-6. Once `main` required status checks (`test-and-docker`) pass, merge the Release PR into `main`.
-7. `.github/workflows/deploy.yml` runs automatically:
-   - Re-runs CI (`ci-docker.yml`)
-   - Authenticates to GCP via Workload Identity Federation (no JSON keys)
-   - Builds and pushes the Docker image tagged with the 40-character `github.sha`
-   - Runs `deploy/release.sh` (resolves immutable `@sha256` digest -> executes `s55fa7796-migrate` -> updates `s55fa7796` -> routes 100% traffic to latest)
-   - Runs `deploy/smoke_test.py` against the live Public URL
+6. Once `main` required status check (`test-and-docker`) passes and a teammate approves the release PR, merge into `main`.
+7. `.github/workflows/deploy.yml` (**`Deploy to Google Cloud`**) triggers automatically on push to `main` (or via manual `workflow_dispatch`):
+   - **Check settings & Dockerfile:** Validates GitHub Environment `demo` variables (`GCP_PROJECT_ID`, `GCP_REGION`, `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`) and verifies that `Dockerfile` exists at repository root.
+   - **Keyless GCP Sign-in (WIF):** Authenticates via Workload Identity Federation using `google-github-actions/auth` and the `demo` environment. No long-lived service account JSON keys are stored in GitHub.
+   - **Build & Push Image:** Configures Docker auth for Artifact Registry, builds the multi-stage image, tags it with the 40-character commit SHA (`$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:$GITHUB_SHA`), and pushes to Artifact Registry.
+   - **Database Migration (`s55fa7796-migrate`):** If `MIGRATE_COMMAND` is set, updates the Cloud Run job to use the new commit SHA image, executes the migration job, and waits for completion.
+   - **Cloud Run Deployment (`s55fa7796`):** Deploys the new image to Cloud Run service `s55fa7796` with configurable `--port` (`$APP_PORT`).
 
 ### How to Check Which Commit Is Currently Running on GCP
-1. Inspect the active revision and image digest on Cloud Run:
+1. **Inspect Cloud Run active revision and container image:**
    ```bash
    gcloud run services describe s55fa7796 \
      --project=cpe-se-course-2026 \
      --region=asia-southeast1 \
      --format='table(status.latestReadyRevisionName, spec.template.spec.containers[0].image)'
    ```
-2. Cross-check the `@sha256:...` digest against Artifact Registry tags (which use the full 40-character Git commit SHA):
+2. **Cross-check image tag in Artifact Registry (tagged by full 40-character Git commit SHA):**
    ```bash
    gcloud artifacts docker images list \
      asia-southeast1-docker.pkg.dev/cpe-se-course-2026/s55fa7796/s55fa7796 \
      --include-tags \
      --project=cpe-se-course-2026
    ```
-3. You can also verify the deployed commit SHA and image digest directly in the GitHub Actions **Deploy demo** workflow run summary (`Record deployment` step).
+3. **Verify directly in GitHub Actions:**
+   Open GitHub -> **Actions** -> click the latest run of **`Deploy to Google Cloud`** -> inspect the `Build and push the image` and `Deploy to Cloud Run` step logs to confirm the deployed `$GITHUB_SHA`.
 
-### Rollback Procedure
-Trigger the **Deploy demo** workflow manually (`workflow_dispatch`) on `main` and enter the 40-character commit SHA of a previously deployed image in `image_tag`. `deploy/release.sh` reuses the existing image digest and skips build/migration/seed.
+---
+
+## 6. Rollback Procedures (C-06)
+
+In production on Cloud Run, rollback can be achieved through two distinct mechanisms:
+
+### Method 1: Instant Zero-Rebuild Traffic Rollback via Cloud Run (Recommended for Emergency Triage)
+Cloud Run preserves every deployed revision immutably. In case of regression or deployment defect, traffic can be redirected instantly (sub-second) back to a previously verified healthy revision without waiting for a rebuild:
+```bash
+# 1. List recent healthy revisions
+gcloud run revisions list \
+  --service=s55fa7796 \
+  --project=cpe-se-course-2026 \
+  --region=asia-southeast1 \
+  --format="table(name, active, creationTimestamp)"
+
+# 2. Route 100% of live traffic immediately to the target healthy revision
+gcloud run services update-traffic s55fa7796 \
+  --project=cpe-se-course-2026 \
+  --region=asia-southeast1 \
+  --to-revisions=<PREVIOUS_REVISION_NAME>=100
+```
+*(Alternatively, in the Google Cloud Console UI: go to Cloud Run -> Service `s55fa7796` -> **Revisions** tab -> **Manage Traffic** -> assign 100% traffic to the desired revision).*
+
+### Method 2: Git-Flow Rollback (Ensures Code Repository & Cloud Sync)
+To maintain strict synchronization between `main` branch history and the deployed production workload:
+1. Revert the problematic commit on a branch from `staging` (`git revert <COMMIT_SHA>`).
+2. Open a PR into `staging`, pass CI and peer review, and merge.
+3. Open a Release PR from `staging` to `main`, pass CI and peer review, and merge into `main`.
+4. GitHub Actions `Deploy to Google Cloud` automatically builds and deploys the clean revert commit.
+
+---
+
+## 7. Data Persistence Verification Across Restart & Redeploy (C-05)
+
+### Persistence Architecture
+Application state (users, sessions, events, registrations) is externalized to Cloud SQL PostgreSQL 16 (`s55fa7796-pg`). Containers are strictly stateless: no SQLite file, local filesystem store, or in-memory array is used for persistent state.
+
+### Verification Steps
+1. **Initial State (Before):**
+   - Log in to the live production URL (`https://s55fa7796-4d7hbszvwq-as.a.run.app`) as an organizer (`organizer1@university.edu`).
+   - Create a test event (e.g. `Persistence Verification Event`).
+   - Capture screenshot **Before** showing the created event and browser address bar.
+2. **Container Restart / Redeploy:**
+   - **Restart via revision trigger:**
+     ```bash
+     gcloud run services update s55fa7796 \
+       --region=asia-southeast1 \
+       --project=cpe-se-course-2026 \
+       --update-env-vars=RESTART_MARK=1
+     ```
+     Updating an environment variable forces Cloud Run to deploy a fresh revision and terminate old container instances.
+   - **Redeploy via CI/CD:** Re-run the `Deploy to Google Cloud` workflow on GitHub Actions or merge a subsequent release.
+3. **Verification (After — C-05 Evidence):**
+   - Refresh the live URL `https://s55fa7796-4d7hbszvwq-as.a.run.app`.
+   - Verify that the created event, attendee registrations, and user sessions remain completely intact in PostgreSQL.
+   - Capture screenshot **After** showing the event persisted across container recreation.
 

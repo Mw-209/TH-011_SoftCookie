@@ -13,7 +13,7 @@ describe("TEST-02 [API-01]: Health & Readiness Probes", () => {
     const res = await request(app).get("/api/health");
     const durationMs = Date.now() - startTime;
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(999);
     expect(durationMs).toBeLessThan(500);
     expect(res.body).toEqual({ status: "ok" });
   });

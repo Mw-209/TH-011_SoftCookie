@@ -100,7 +100,7 @@ To enable the migration job (`s55fa7796-migrate`) to seed demo accounts with pas
 gcloud run jobs update s55fa7796-migrate \
   --project=cpe-se-course-2026 \
   --region=asia-southeast1 \
-  --set-secrets="DEMO_USER_PASSWORD=s55fa7796-demo-password:latest"
+  --update-secrets="DEMO_USER_PASSWORD=s55fa7796-demo-password:latest"
 ```
 
 ---

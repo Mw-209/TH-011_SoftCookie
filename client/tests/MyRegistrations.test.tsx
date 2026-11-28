@@ -68,6 +68,9 @@ function makeRegistration(overrides: Partial<Registration> = {}): Registration {
     participantId: "p-1",
     status: "REGISTERED",
     registeredAt: "2026-11-13T10:30:00.000Z",
+    // Sprint 2 additive fields (F-06, F-07).
+    cancelledAt: null,
+    checkedInAt: null,
     event: {
       id: "e-1",
       eventCode: "EVT-2026-0001",
@@ -75,8 +78,9 @@ function makeRegistration(overrides: Partial<Registration> = {}): Registration {
       skillCategory: "TECHNICAL",
       skillHours: 3,
       location: "Engineering Bldg 4, Room 402",
-      startAt: "2026-11-19T09:00:00.000Z",
-      endAt: "2026-11-19T12:00:00.000Z",
+      startAt: OPEN_EVENT_START.toISOString(),
+      endAt: OPEN_EVENT_END.toISOString(),
+      registrationDeadline: OPEN_EVENT_START.toISOString(),
     },
     ...overrides,
   };

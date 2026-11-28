@@ -12,6 +12,8 @@ export interface RegistrationEvent {
   location: string;
   startAt: string;
   endAt: string;
+  /** Added in Sprint 2 (F-06): Cancel is offered only while this is ahead. */
+  registrationDeadline: string;
 }
 
 export interface Registration {
@@ -21,6 +23,9 @@ export interface Registration {
   participantId: string;
   status: RegistrationStatus;
   registeredAt: string;
+  /** Added in Sprint 2 (F-06, F-07); null until that transition happens. */
+  cancelledAt: string | null;
+  checkedInAt: string | null;
   event: RegistrationEvent;
 }
 
@@ -35,6 +40,16 @@ export async function fetchMyRegistrations(): Promise<Registration[]> {
     "/api/registrations/my"
   );
   return data.registrations;
+}
+
+/** POST /api/registrations/:id/cancel (F-06): releases the seat. */
+export async function cancelRegistration(
+  registrationId: string
+): Promise<RegistrationResult> {
+  return apiFetch<RegistrationResult>(
+    `/api/registrations/${registrationId}/cancel`,
+    { method: "POST", body: JSON.stringify({}) }
+  );
 }
 
 export async function registerForEvent(

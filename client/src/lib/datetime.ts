@@ -92,11 +92,43 @@ export interface RegistrationWindow {
 export const CLOSING_SOON_DAYS = 3;
 
 /**
+ * True once the registration deadline has passed (BR-06, F-05).
+ *
+ * Mirrors the backend rule NOW() <= registrationDeadline: a request made
+ * exactly at the deadline is still on time. The backend remains the authority;
+ * this only decides whether to offer the Register button.
+ */
+export function isRegistrationClosed(
+  deadlineIso: string,
+  now: Date = new Date()
+): boolean {
+  return now.getTime() > new Date(deadlineIso).getTime();
+}
+
+/**
+ * Converts an absolute ISO instant into the "YYYY-MM-DDTHH:mm" wall-clock text
+ * an <input type="datetime-local"> expects, in the viewer's own time zone.
+ *
+ * iso.slice(0, 16) would be wrong: the API sends UTC ("...Z"), so a Bangkok
+ * viewer (UTC+7) would see the time 7 hours early, and saving the untouched
+ * form would silently move the deadline. Convert back with
+ * new Date(value).toISOString(), as CreateEventPage does.
+ */
+export function toDateTimeLocalValue(iso: string): string {
+  const date = new Date(iso);
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}
+
+/**
  * Describes the registration window for display.
  *
- * Presentation only. Sprint 1 does not enforce the cutoff: FR-08 and BR-06 are
- * allocated to Sprint 2 (F-05), so this reports what the stored deadline says
- * and nothing more.
+ * Presentation only. Since Sprint 2 (F-05) the backend enforces the cutoff
+ * (BR-06); this reports what the stored deadline says.
  */
 export function describeRegistrationWindow(
   deadlineIso: string,

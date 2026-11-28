@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 import { getPrisma } from "../prisma.js";
 import { ApiError } from "../lib/errors.js";
+import { assertBeforeDeadline } from "../lib/deadline.js";
 
 /**
  * Statuses that occupy a seat (BR-02). CANCELLED releases its seat, which is
@@ -191,15 +192,22 @@ export async function registerForEvent(
         // Prisma has no API for row locks, so this one statement is raw SQL.
         // No ::uuid cast: Prisma maps String @id to a text column, and casting
         // the parameter makes Postgres reject the comparison as text = uuid.
-        const locked = await tx.$queryRaw<Array<{ id: string; capacity: number }>>`
-          SELECT id, capacity FROM events WHERE id = ${eventId} FOR UPDATE
+        const locked = await tx.$queryRaw<
+          Array<{ id: string; capacity: number; registrationDeadline: Date }>
+        >`
+          SELECT id, capacity, "registrationDeadline" FROM events WHERE id = ${eventId} FOR UPDATE
         `;
 
         if (locked.length === 0) {
           throw ApiError.notFound("Event");
         }
 
-        const { capacity } = locked[0];
+        const { capacity, registrationDeadline } = locked[0];
+
+        // BR-06, checked before seats (F-05 3.2): once the window has closed
+        // nobody may register, whether or not a seat is free. Read under the
+        // lock, so a deadline moved earlier by the organizer applies at once.
+        assertBeforeDeadline(new Date(registrationDeadline));
 
         const [activeCount, existing] = await Promise.all([
           tx.registration.count({

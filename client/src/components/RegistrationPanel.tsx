@@ -8,6 +8,7 @@ import {
   type Registration,
 } from "../api/registrations";
 import type { EventSummary } from "../api/events";
+import { isRegistrationClosed } from "../lib/datetime";
 
 interface RegistrationPanelProps {
   event: EventSummary;
@@ -33,6 +34,9 @@ export default function RegistrationPanel({
   const [justRegistered, setJustRegistered] =
     useState<Registration["registrationNumber"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set when the server answers DEADLINE_PASSED, e.g. from a tab left open
+  // across the deadline, so the button disappears without a reload.
+  const [closedByServer, setClosedByServer] = useState(false);
 
   const isParticipant = user?.role === "PARTICIPANT";
 
@@ -81,8 +85,10 @@ export default function RegistrationPanel({
     } catch (caught) {
       if (caught instanceof ApiClientError) {
         // EVENT_FULL here means another participant claimed the last seat
-        // between the page loading and the click.
+        // between the page loading and the click; DEADLINE_PASSED means the
+        // registration window closed while the page was open (BR-06).
         setError(caught.message);
+        if (caught.code === "DEADLINE_PASSED") setClosedByServer(true);
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -94,6 +100,10 @@ export default function RegistrationPanel({
   const registrationNumber =
     justRegistered ?? existing?.registrationNumber ?? null;
   const isFull = event.remainingSeats <= 0;
+  // Display order when not registered: closed beats full, because once the
+  // deadline has passed a free seat cannot be claimed anyway (F-05 3.3).
+  const isClosed =
+    closedByServer || isRegistrationClosed(event.registrationDeadline);
 
   return (
     <section className="mb-6 rounded border border-cookie-readonlyBorder bg-cookie-readonlyBg p-4">
@@ -180,13 +190,19 @@ export default function RegistrationPanel({
             </p>
           )}
 
-          {!isLoading && !registrationNumber && isFull && (
+          {!isLoading && !registrationNumber && isClosed && (
+            <span className="inline-block rounded bg-cookie-warningBg px-2.5 py-1 text-xs font-semibold text-cookie-warningText">
+              Registration Closed (Deadline Passed)
+            </span>
+          )}
+
+          {!isLoading && !registrationNumber && !isClosed && isFull && (
             <span className="inline-block rounded bg-cookie-warningBg px-2.5 py-1 text-xs font-semibold text-cookie-warningText">
               Event Full (0 seats left)
             </span>
           )}
 
-          {!isLoading && !registrationNumber && !isFull && (
+          {!isLoading && !registrationNumber && !isClosed && !isFull && (
             <button
               type="button"
               onClick={handleRegister}

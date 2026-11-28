@@ -71,6 +71,25 @@ function readTrimmedString(
   return value;
 }
 
+function readDescription(
+  raw: Record<string, unknown>,
+  details: Record<string, string>
+): string {
+  const value = typeof raw.description === "string" ? raw.description : "";
+  const { min, max } = EVENT_LIMITS.description;
+
+  if (!value) {
+    details.description = "Description is required.";
+    return "";
+  }
+
+  if (value.length < min || value.length > max) {
+    details.description = `Description must be between ${min} and ${max} characters.`;
+  }
+
+  return value.trim();
+}
+
 function readInteger(
   raw: Record<string, unknown>,
   field: "skillHours" | "capacity",
@@ -133,12 +152,7 @@ export function validateEventInput(body: unknown): ValidatedEventInput {
   const details: Record<string, string> = {};
 
   const title = readTrimmedString(raw, "title", "Event title", details);
-  const description = readTrimmedString(
-    raw,
-    "description",
-    "Description",
-    details
-  );
+  const description = readDescription(raw, details);
   const location = readTrimmedString(raw, "location", "Location", details);
   const skillHours = readInteger(raw, "skillHours", "Skill hours", details);
   const capacity = readInteger(raw, "capacity", "Capacity", details);

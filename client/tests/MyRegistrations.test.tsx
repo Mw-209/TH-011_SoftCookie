@@ -33,6 +33,12 @@ const sessionFor = (role: "PARTICIPANT" | "ORGANIZER") =>
     200
   );
 
+// An open event: start and deadline sit a week ahead of the test run. Since
+// Sprint 2 (F-05, BR-06) the panel hides the Register button once the deadline
+// has passed, so a fixed calendar date would make these Sprint 1 cases expire.
+const OPEN_EVENT_START = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+const OPEN_EVENT_END = new Date(OPEN_EVENT_START.getTime() + 3 * 60 * 60 * 1000);
+
 function makeEvent(overrides: Partial<EventSummary> = {}): EventSummary {
   return {
     id: "e-1",
@@ -42,9 +48,9 @@ function makeEvent(overrides: Partial<EventSummary> = {}): EventSummary {
     skillCategory: "TECHNICAL",
     skillHours: 3,
     location: "Engineering Bldg 4, Room 402",
-    startAt: "2026-11-19T09:00:00.000Z",
-    endAt: "2026-11-19T12:00:00.000Z",
-    registrationDeadline: "2026-11-19T09:00:00.000Z",
+    startAt: OPEN_EVENT_START.toISOString(),
+    endAt: OPEN_EVENT_END.toISOString(),
+    registrationDeadline: OPEN_EVENT_START.toISOString(),
     capacity: 20,
     activeRegistrationsCount: 5,
     remainingSeats: 15,

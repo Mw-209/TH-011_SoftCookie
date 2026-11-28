@@ -12,6 +12,7 @@ import ClockIcon from "../components/ClockIcon";
 import MapPinIcon from "../components/MapPinIcon";
 import DeadlineChip from "../components/DeadlineChip";
 import RegistrationPanel from "../components/RegistrationPanel";
+import EventEditForm from "../components/EventEditForm";
 import {
   formatDateTime,
   formatEventDateRange,
@@ -160,21 +161,26 @@ export default function EventDetailPage() {
           />
 
           {user?.role === "ORGANIZER" && event.organizerId === user.id && (
-            <div className="mb-6 flex items-center justify-between rounded border border-cookie-border bg-cookie-cream/40 p-4">
-              <div>
-                <h2 className="text-sm font-semibold text-cookie-cocoa">
-                  Organizer Controls
-                </h2>
-                <p className="text-xs text-cookie-cocoa/70">
-                  Inspect participant list and registration details for your event.
-                </p>
+            <div className="mb-6 rounded border border-cookie-border bg-cookie-cream/40 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-cookie-cocoa">
+                    Organizer Controls
+                  </h2>
+                  <p className="text-xs text-cookie-cocoa/70">
+                    Inspect participant list and registration details for your event.
+                  </p>
+                </div>
+                <Link
+                  to={`/organizer/events/${event.id}/registrations`}
+                  className="inline-flex items-center rounded bg-cookie-caramel px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cookie-amber"
+                >
+                  View Registrations Roster
+                </Link>
               </div>
-              <Link
-                to={`/organizer/events/${event.id}/registrations`}
-                className="inline-flex items-center rounded bg-cookie-caramel px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cookie-amber"
-              >
-                View Registrations Roster
-              </Link>
+
+              {/* F-05: the server's response refreshes seats and the deadline chip. */}
+              <EventEditForm event={event} onUpdated={setEvent} />
             </div>
           )}
 

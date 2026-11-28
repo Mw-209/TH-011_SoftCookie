@@ -51,6 +51,12 @@ export interface CreateEventPayload {
   capacity: number;
 }
 
+/** PATCH /api/events/:id body (F-05): send only the fields being changed. */
+export interface UpdateEventPayload {
+  capacity?: number;
+  registrationDeadline?: string;
+}
+
 export async function fetchEvents(): Promise<EventSummary[]> {
   const data = await apiFetch<{ events: EventSummary[] }>("/api/events");
   return data.events;
@@ -58,6 +64,17 @@ export async function fetchEvents(): Promise<EventSummary[]> {
 
 export async function fetchEvent(id: string): Promise<EventSummary> {
   const data = await apiFetch<{ event: EventSummary }>(`/api/events/${id}`);
+  return data.event;
+}
+
+export async function updateEvent(
+  id: string,
+  payload: UpdateEventPayload
+): Promise<EventSummary> {
+  const data = await apiFetch<{ event: EventSummary }>(`/api/events/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
   return data.event;
 }
 

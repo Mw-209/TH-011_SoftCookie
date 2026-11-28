@@ -8,6 +8,7 @@ import { SESSION_COOKIE_NAME } from "../../src/lib/session.js";
 const prisma = getPrisma();
 
 const ORGANIZER1_EMAIL = "organizer1@university.edu";
+const ORGANIZER2_EMAIL = "organizer2@university.edu";
 const STUDENT1_EMAIL = "student1@university.edu";
 const STUDENT2_EMAIL = "student2@university.edu";
 
@@ -37,6 +38,7 @@ async function cookieFor(email: string): Promise<string> {
 }
 
 let organizer1Cookie: string;
+let organizer2Cookie: string;
 let student1Cookie: string;
 
 let organizer1Id: string;
@@ -126,6 +128,7 @@ beforeAll(async () => {
   await prisma.$connect();
 
   organizer1Cookie = await cookieFor(ORGANIZER1_EMAIL);
+  organizer2Cookie = await cookieFor(ORGANIZER2_EMAIL);
   student1Cookie = await cookieFor(STUDENT1_EMAIL);
 
   const [organizer1, student1, student2] = await Promise.all(
@@ -153,6 +156,82 @@ async function storedOpenEvent() {
     select: { capacity: true, registrationDeadline: true },
   });
 }
+
+describe("TEST-40 [API-20]: owning organizer updates capacity and deadline (AC-21, FR-07)", () => {
+  it("increases capacity and returns the recalculated remainingSeats", async () => {
+    await seedTwoActiveRegistrations();
+
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", organizer1Cookie)
+      .send({ capacity: 8 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.event).toMatchObject({
+      id: openEventId,
+      capacity: 8,
+      activeRegistrationsCount: 2,
+      remainingSeats: 6,
+    });
+
+    const detail = await request(app)
+      .get(`/api/events/${openEventId}`)
+      .set("Cookie", organizer1Cookie);
+    expect(detail.body.data.event.capacity).toBe(8);
+    expect(detail.body.data.event.remainingSeats).toBe(6);
+  });
+
+  it("decreases capacity safely down to the active count (boundary, BR-07)", async () => {
+    await seedTwoActiveRegistrations();
+
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", organizer1Cookie)
+      .send({ capacity: 2 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.event.capacity).toBe(2);
+    expect(res.body.data.event.remainingSeats).toBe(0);
+    expect((await storedOpenEvent()).capacity).toBe(2);
+  });
+
+  it("moves the registration deadline earlier and persists it", async () => {
+    const earlier = new Date(Date.now() + 2 * DAY);
+    earlier.setMilliseconds(0);
+
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", organizer1Cookie)
+      .send({ registrationDeadline: earlier.toISOString() });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.event.registrationDeadline).toBe(earlier.toISOString());
+    expect((await storedOpenEvent()).registrationDeadline).toEqual(earlier);
+  });
+
+  it("updates capacity and deadline together and ignores non-editable fields", async () => {
+    const deadline = new Date(Date.now() + 3 * DAY);
+    deadline.setMilliseconds(0);
+
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", organizer1Cookie)
+      .send({
+        capacity: 7,
+        registrationDeadline: deadline.toISOString(),
+        title: "Renamed by the client",
+        organizerId: student2Id,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.event).toMatchObject({
+      capacity: 7,
+      registrationDeadline: deadline.toISOString(),
+      title: "F-05 Fixture Open Event",
+      organizerId: organizer1Id,
+    });
+  });
+});
 
 describe("TEST-41 [API-21]: capacity floor and invalid updates (TDD #1, AC-22, AC-23)", () => {
   it("rejects capacity below the active registrations with 409 and leaves the event unchanged (AC-22, BR-07)", async () => {
@@ -209,6 +288,51 @@ describe("TEST-41 [API-21]: capacity floor and invalid updates (TDD #1, AC-22, A
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+});
+
+describe("TEST-42 [API-22]: role and ownership guards on PATCH (AC-24, BR-04, BR-05, NFR-02)", () => {
+  it("rejects a non-owning ORGANIZER with 403 FORBIDDEN_OWNERSHIP and changes nothing", async () => {
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", organizer2Cookie)
+      .send({ capacity: 9 });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN_OWNERSHIP");
+    expect(res.body.data).toBeUndefined();
+    expect((await storedOpenEvent()).capacity).toBe(5);
+  });
+
+  it("rejects a PARTICIPANT with 403 FORBIDDEN_ROLE and changes nothing", async () => {
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .set("Cookie", student1Cookie)
+      .send({ capacity: 9 });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN_ROLE");
+    expect((await storedOpenEvent()).capacity).toBe(5);
+  });
+
+  it("rejects an unauthenticated client with 401 UNAUTHENTICATED", async () => {
+    const res = await request(app)
+      .patch(`/api/events/${openEventId}`)
+      .send({ capacity: 9 });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
+    expect((await storedOpenEvent()).capacity).toBe(5);
+  });
+
+  it("returns 404 NOT_FOUND for an unknown event", async () => {
+    const res = await request(app)
+      .patch("/api/events/00000000-0000-0000-0000-000000000000")
+      .set("Cookie", organizer1Cookie)
+      .send({ capacity: 9 });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 });
 

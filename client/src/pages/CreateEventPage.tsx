@@ -49,7 +49,7 @@ function validate(values: FormValues): FieldErrors {
   else if (location.length < 3 || location.length > 150)
     errors.location = "Location must be between 3 and 150 characters.";
 
-  const description = values.description.trim();
+  const description = values.description;
   if (!description) errors.description = "Description is required.";
   else if (description.length < 10 || description.length > 2000)
     errors.description = "Description must be between 10 and 2000 characters.";
@@ -155,7 +155,7 @@ export default function CreateEventPage() {
     try {
       const created = await createEvent({
         title: values.title.trim(),
-        description: values.description.trim(),
+        description: values.description,
         location: values.location.trim(),
         skillCategory: values.skillCategory as SkillCategory,
         skillHours: Number(values.skillHours),

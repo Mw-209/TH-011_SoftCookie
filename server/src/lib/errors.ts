@@ -13,6 +13,7 @@ export type ApiErrorCode =
   | "EVENT_FULL"
   | "DEADLINE_PASSED"
   | "CAPACITY_BELOW_ACTIVE_COUNT"
+  | "INVALID_STATE_TRANSITION"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
@@ -104,6 +105,11 @@ export class ApiError extends Error {
       `Capacity cannot be lower than the ${activeCount} active registration(s) already confirmed.`,
       { capacity: `Capacity must be at least ${activeCount}.` }
     );
+  }
+
+  /** BR-08 / BR-09 (Sprint 2, F-06 / F-07): a status change the lifecycle forbids. */
+  static invalidStateTransition(message: string) {
+    return new ApiError(409, "INVALID_STATE_TRANSITION", message);
   }
 
   static notFound(what: string) {

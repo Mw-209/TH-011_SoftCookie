@@ -207,19 +207,68 @@ export interface EventUpdateInput {
  * before it and the start itself is not editable.
  */
 export function validateEventUpdateInput(
-  _body: unknown,
-  _context: { startAt: Date }
+  body: unknown,
+  context: { startAt: Date }
 ): EventUpdateInput {
-  // TDD RED stub: not yet implemented.
-  return {};
+  const raw =
+    body !== null && typeof body === "object"
+      ? (body as Record<string, unknown>)
+      : {};
+  const details: Record<string, string> = {};
+
+  // Only these two fields are editable (FR-07); anything else in the payload,
+  // such as title, organizerId or startAt, is ignored rather than rejected.
+  const hasCapacity = raw.capacity !== undefined;
+  const hasDeadline = raw.registrationDeadline !== undefined;
+
+  if (!hasCapacity && !hasDeadline) {
+    throw ApiError.validation("Provide a capacity or a registration deadline to update.", {
+      capacity: "Provide a capacity or a registration deadline to update.",
+      registrationDeadline: "Provide a capacity or a registration deadline to update.",
+    });
+  }
+
+  const result: EventUpdateInput = {};
+
+  if (hasCapacity) {
+    result.capacity = readInteger(raw, "capacity", "Capacity", details);
+  }
+
+  if (hasDeadline) {
+    const deadline = readDate(
+      raw,
+      "registrationDeadline",
+      "Registration deadline",
+      details
+    );
+
+    // A deadline already in the past is allowed: it closes registration now
+    // (F-05 3.2). Only the ordering against the stored start is enforced.
+    if (deadline && deadline.getTime() > context.startAt.getTime()) {
+      details.registrationDeadline =
+        "Registration deadline must be on or before the start date and time.";
+    }
+
+    if (deadline) {
+      result.registrationDeadline = deadline;
+    }
+  }
+
+  if (Object.keys(details).length > 0) {
+    throw ApiError.validation("Please correct the highlighted fields.", details);
+  }
+
+  return result;
 }
 
 /** BR-07: capacity may never drop below the seats already taken. */
 export function assertCapacityFloor(
-  _newCapacity: number,
-  _activeCount: number
+  newCapacity: number,
+  activeCount: number
 ): void {
-  // TDD RED stub: not yet implemented.
+  if (newCapacity < activeCount) {
+    throw ApiError.capacityBelowActiveCount(activeCount);
+  }
 }
 
 type EventWithCounts = Event & {
@@ -356,6 +405,67 @@ export async function getEventById(id: string): Promise<PublicEvent> {
   }
 
   return toPublicEvent(event as EventWithCounts);
+}
+
+/**
+ * Updates capacity and/or registration deadline for an event the organizer
+ * owns (F-05, FR-07).
+ *
+ * The event row is locked with SELECT ... FOR UPDATE before the active seats
+ * are counted, the same lock registerForEvent takes. A registration and a
+ * capacity reduction for the same event therefore run one after the other, so
+ * the capacity floor (BR-07) is checked against a count that cannot change
+ * underneath it (NFR-03).
+ *
+ * Checks run in this order: unknown event (404), not the owner (403), invalid
+ * payload (400), capacity below active registrations (409). Ownership comes
+ * before validation so a non-owner learns nothing about the event's data.
+ */
+export async function updateEvent(
+  eventId: string,
+  organizerId: string,
+  body: unknown
+): Promise<PublicEvent> {
+  const prisma = getPrisma();
+
+  return prisma.$transaction(async (tx) => {
+    // No ::uuid cast, for the same reason as registerForEvent: Prisma maps
+    // String @id to a text column.
+    const locked = await tx.$queryRaw<
+      Array<{ id: string; organizerId: string; startAt: Date }>
+    >`
+      SELECT id, "organizerId", "startAt" FROM events WHERE id = ${eventId} FOR UPDATE
+    `;
+
+    if (locked.length === 0) {
+      throw new ApiError(404, "NOT_FOUND", "Event not found.");
+    }
+
+    const event = locked[0];
+
+    if (event.organizerId !== organizerId) {
+      throw ApiError.forbiddenOwnership();
+    }
+
+    const input = validateEventUpdateInput(body, {
+      startAt: new Date(event.startAt),
+    });
+
+    if (input.capacity !== undefined) {
+      const activeCount = await tx.registration.count({
+        where: { eventId, status: { in: [...ACTIVE_REGISTRATION_STATUSES] } },
+      });
+      assertCapacityFloor(input.capacity, activeCount);
+    }
+
+    const updated = await tx.event.update({
+      where: { id: eventId },
+      data: input,
+      include: eventInclude,
+    });
+
+    return toPublicEvent(updated as EventWithCounts);
+  });
 }
 
 export interface EventRosterRegistration {

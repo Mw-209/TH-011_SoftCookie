@@ -11,6 +11,8 @@ export type ApiErrorCode =
   | "FORBIDDEN_OWNERSHIP"
   | "DUPLICATE_REGISTRATION"
   | "EVENT_FULL"
+  | "DEADLINE_PASSED"
+  | "CAPACITY_BELOW_ACTIVE_COUNT"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
@@ -84,6 +86,23 @@ export class ApiError extends Error {
       409,
       "EVENT_FULL",
       "This event is full. No seats remain."
+    );
+  }
+
+  /** BR-06 (Sprint 2, F-05 / F-06). */
+  static deadlinePassed(
+    message = "The registration deadline for this event has passed."
+  ) {
+    return new ApiError(409, "DEADLINE_PASSED", message);
+  }
+
+  /** BR-07 (Sprint 2, F-05). */
+  static capacityBelowActiveCount(activeCount: number) {
+    return new ApiError(
+      409,
+      "CAPACITY_BELOW_ACTIVE_COUNT",
+      `Capacity cannot be lower than the ${activeCount} active registration(s) already confirmed.`,
+      { capacity: `Capacity must be at least ${activeCount}.` }
     );
   }
 

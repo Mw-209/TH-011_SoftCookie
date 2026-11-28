@@ -5,6 +5,7 @@ import {
   getEventById,
   getEventRoster,
   listEvents,
+  updateEvent,
   validateEventInput,
 } from "../services/event.service.js";
 import { registerForEvent } from "../services/registration.service.js";
@@ -46,6 +47,27 @@ eventRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       res.status(200).json({ data: { event: await getEventById(req.params.id) } });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// PATCH /api/events/:id — owning ORGANIZER only (F-05 3.2, BR-04, BR-05)
+eventRouter.patch(
+  "/:id",
+  requireRole("ORGANIZER"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Ownership is checked against the session user inside the service;
+      // only capacity and registrationDeadline are read from the body.
+      const event = await updateEvent(
+        req.params.id,
+        req.currentUser!.id,
+        req.body
+      );
+
+      res.status(200).json({ data: { event } });
     } catch (error) {
       next(error);
     }

@@ -3,8 +3,8 @@
 **Course:** CPE 334 — Introduction to Software Engineering in the Age of AI Agents (Semester 1/2026)  
 **Project Theme:** Theme 3 — Event Registration and Attendance System (University Skill-Building Context)  
 **Team Name:** TH-011_SoftCookie  
-**Document Version:** 1.1 (Engineering Baseline — Aligned with CPE 334 SDD/TDD Conventions)  
-**Last Updated:** 2026-11-11  
+**Document Version:** 1.2 (Sprint 2 Issue Decomposition Added)  
+**Last Updated:** 2026-11-28  
 
 ---
 
@@ -73,7 +73,40 @@ Before writing application code, Sprint 1 is decomposed into seven bounded GitHu
 
 ---
 
-## 4. Baseline Allocation Summary Across Sprints 1–3
+## 4. Sprint 2 & Sprint 3 Progress Issues Decomposition (Project Deliverable 2)
+
+Sprint 2 starts from the Lab 5 release on `main` (`ef41b8d`). A dedicated integration branch `sprint2-staging` is created from `main`; every Deliverable 2 feature branch is cut from `sprint2-staging` and returns to it through a teammate-reviewed Pull Request with the `test-and-docker` CI check (Issue S2-1 adds `sprint2-staging` to the `ci-docker.yml` `pull_request` branches). Because Deliverable 2 requires the candidate on `main` to integrate Sprint 1, Sprint 2 and implemented Sprint 3 work, the release Issue (S2-5) is completed last. The six Issues were created as GitHub Issues `#32`–`#37`, and each branch name carries its Issue number. Playwright E2E tests (`TEST-45`, `TEST-52`, `TEST-58`) share `e2e/tests/sprint2-lifecycle.spec.ts`, so they are implemented together in S2-5 after the three features are integrated.
+
+| Order | Issue Title & Type | Feature / Scope Covered | Required Feature Branch | PR Target | Dependencies |
+| :---: | :--- | :--- | :--- | :--- | :--- |
+| **S2-1** (#32) | **Sprint 2 Engineering Contracts (F-05, F-06, F-07)** (`Specification`) | `docs/sprints/sprint-2/*` contracts (`AC-21`–`AC-34`, `TEST-39`–`TEST-58`, Sprint 2 DoD), Sprint 2 rows in `docs/traceability.md`, this decomposition, and `sprint2-staging` added to the CI `pull_request` branches. | `feature/32-sprint2-contracts` | `sprint2-staging` | Sprint 1 (`main` `ef41b8d`) |
+| **S2-2** (#33) | **F-05: Registration Deadlines & Event Capacity Management** (`Feature`) | `PATCH /api/events/:id` (`BR-01`, `BR-07`), `BR-06` deadline cutoff on registration (`409 DEADLINE_PASSED`), new error codes, capacity/deadline edit UI and closed-registration state, plus TDD & tests `TEST-39`–`TEST-44` (`E2E-08` / `TEST-45` in S2-5). | `feature/33-f05-deadlines-capacity` | `sprint2-staging` | S2-1 |
+| **S2-3** (#34) | **F-06: Participant Registration Cancellation & Re-Registration** (`Feature`) | `POST /api/registrations/:id/cancel` (`BR-06`, `BR-08`), reactivation of an existing `CANCELLED` row on re-registration, additive `event.registrationDeadline` and `cancelledAt` / `checkedInAt` registration fields, Cancel & Re-Register UI, plus TDD & tests `TEST-46`–`TEST-51` (`E2E-09` / `TEST-52` in S2-5). | `feature/34-f06-registration-cancellation` | `sprint2-staging` | S2-2 |
+| **S2-4** (#35) | **F-07: Participant Check-In & Attendance Recording** (`Feature`) | `POST /api/events/:id/registrations/:regId/check-in` (`BR-09`), roster Check-In button and `ATTENDED` badge, plus TDD & tests `TEST-53`–`TEST-57` (`E2E-10` / `TEST-58` in S2-5). | `feature/35-f07-participant-checkin` | `sprint2-staging` | S2-3 |
+| **S3-1** (#36) | **Sprint 3 Contracts (F-08) & Initial Working Progress** (`Specification` + `Feature`) | `docs/sprints/sprint-3/*` contract for `F-08` (`FR-11`, `FR-12`, `BR-10`) committed **before** implementation, then at least one implemented and tested Sprint 3 workflow (attendance summary `GET /api/events/:id/summary` with `BR-10`, or event search/filter on `/events` with `FR-12`). | `feature/36-sprint3-f08-progress` | `sprint2-staging` | S2-2 – S2-4 |
+| **S2-5** (#37) | **Deliverable 2 Traceability, E2E Regression & GCP Candidate Release** (`Verification & Release`) | Update `docs/traceability.md`, SRS/SDS where needed, Playwright `E2E-08`–`E2E-10` (`TEST-45`, `TEST-52`, `TEST-58`) plus Sprint 1 regression, release PR `sprint2-staging` $\rightarrow$ `main`, deployment through `Deploy to Google Cloud`, post-deployment smoke checks, and the Deliverable 2 tag. | `feature/37-deliverable2-release` | `sprint2-staging` $\rightarrow$ `main` | S2-2 – S2-4, S3-1 |
+
+```mermaid
+flowchart LR
+    M["main (ef41b8d, Lab 5 release)"] --> S2["sprint2-staging"]
+    S2 --> A["feature/32-sprint2-contracts"]
+    S2 --> B["feature/33-f05-deadlines-capacity"]
+    S2 --> C["feature/34-f06-registration-cancellation"]
+    S2 --> D["feature/35-f07-participant-checkin"]
+    S2 --> E["feature/36-sprint3-f08-progress"]
+    S2 --> F["feature/37-deliverable2-release"]
+    A -->|"Reviewed PR + CI"| S2
+    B -->|"Reviewed PR + CI"| S2
+    C -->|"Reviewed PR + CI"| S2
+    D -->|"Reviewed PR + CI"| S2
+    E -->|"Reviewed PR + CI"| S2
+    F -->|"Reviewed PR + CI"| S2
+    S2 -->|"Reviewed Release PR + CI/CD deploy"| M2["main (Deliverable 2 tag)"]
+```
+
+---
+
+## 5. Baseline Allocation Summary Across Sprints 1–3
 
 | Baseline Category | Sprint 1 | Sprint 2 | Sprint 3 | Total Baseline |
 | :--- | :--- | :--- | :--- | :--- |

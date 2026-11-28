@@ -36,6 +36,7 @@ async function cookieFor(email: string): Promise<string> {
   return sessionCookieFrom(res) as string;
 }
 
+let organizer1Cookie: string;
 let student1Cookie: string;
 let student2Cookie: string;
 
@@ -128,6 +129,7 @@ beforeAll(async () => {
 
   await prisma.$connect();
 
+  organizer1Cookie = await cookieFor(ORGANIZER1_EMAIL);
   student1Cookie = await cookieFor(STUDENT1_EMAIL);
   student2Cookie = await cookieFor(STUDENT2_EMAIL);
 
@@ -228,5 +230,141 @@ describe("TEST-48 [API-25]: late and invalid cancellations are rejected (TDD #2,
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("INVALID_STATE_TRANSITION");
     expect((await storedStatus(registration.id)).status).toBe("ATTENDED");
+  });
+});
+
+describe("TEST-49 [API-26]: role and ownership guards on cancel (AC-29, BR-04, BR-05, NFR-02)", () => {
+  it("rejects another participant with 403 FORBIDDEN_OWNERSHIP and leaves the registration unchanged", async () => {
+    const registration = await insertRegistration(
+      oneSeatEventId,
+      student1Id,
+      RegistrationStatus.REGISTERED,
+      "11"
+    );
+
+    const res = await request(app)
+      .post(`/api/registrations/${registration.id}/cancel`)
+      .set("Cookie", student2Cookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN_OWNERSHIP");
+    expect(res.body.data).toBeUndefined();
+    expect((await storedStatus(registration.id)).status).toBe("REGISTERED");
+  });
+
+  it("rejects an ORGANIZER with 403 FORBIDDEN_ROLE and leaves the registration unchanged", async () => {
+    const registration = await insertRegistration(
+      oneSeatEventId,
+      student1Id,
+      RegistrationStatus.REGISTERED,
+      "12"
+    );
+
+    const res = await request(app)
+      .post(`/api/registrations/${registration.id}/cancel`)
+      .set("Cookie", organizer1Cookie);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN_ROLE");
+    expect((await storedStatus(registration.id)).status).toBe("REGISTERED");
+  });
+
+  it("rejects an unauthenticated client with 401 UNAUTHENTICATED", async () => {
+    const registration = await insertRegistration(
+      oneSeatEventId,
+      student1Id,
+      RegistrationStatus.REGISTERED,
+      "13"
+    );
+
+    const res = await request(app).post(`/api/registrations/${registration.id}/cancel`);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHENTICATED");
+    expect((await storedStatus(registration.id)).status).toBe("REGISTERED");
+  });
+
+  it("returns 404 NOT_FOUND for an unknown registration", async () => {
+    const res = await request(app)
+      .post("/api/registrations/00000000-0000-0000-0000-000000000000/cancel")
+      .set("Cookie", student1Cookie);
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+  });
+});
+
+describe("TEST-50 [API-27]: re-registration after cancelling (AC-30, FR-09, BR-02, BR-06, BR-08)", () => {
+  it("reactivates the same row with the same registration number (201)", async () => {
+    const first = await request(app)
+      .post(`/api/events/${oneSeatEventId}/registrations`)
+      .set("Cookie", student1Cookie);
+    const original = first.body.data.registration;
+
+    await request(app)
+      .post(`/api/registrations/${original.id}/cancel`)
+      .set("Cookie", student1Cookie);
+
+    const again = await request(app)
+      .post(`/api/events/${oneSeatEventId}/registrations`)
+      .set("Cookie", student1Cookie);
+
+    expect(again.status).toBe(201);
+    expect(again.body.data.registration).toMatchObject({
+      id: original.id,
+      registrationNumber: original.registrationNumber,
+      status: "REGISTERED",
+      cancelledAt: null,
+    });
+    expect(
+      new Date(again.body.data.registration.registeredAt).getTime()
+    ).toBeGreaterThanOrEqual(new Date(original.registeredAt).getTime());
+    expect(again.body.data.remainingSeats).toBe(0);
+    expect(
+      await prisma.registration.count({
+        where: { eventId: oneSeatEventId, participantId: student1Id },
+      })
+    ).toBe(1);
+  });
+
+  it("rejects re-registration with 409 EVENT_FULL once another participant took the freed seat", async () => {
+    const first = await request(app)
+      .post(`/api/events/${oneSeatEventId}/registrations`)
+      .set("Cookie", student1Cookie);
+    const registrationId = first.body.data.registration.id as string;
+
+    await request(app)
+      .post(`/api/registrations/${registrationId}/cancel`)
+      .set("Cookie", student1Cookie);
+    const taken = await request(app)
+      .post(`/api/events/${oneSeatEventId}/registrations`)
+      .set("Cookie", student2Cookie);
+    expect(taken.status).toBe(201);
+
+    const again = await request(app)
+      .post(`/api/events/${oneSeatEventId}/registrations`)
+      .set("Cookie", student1Cookie);
+
+    expect(again.status).toBe(409);
+    expect(again.body.error.code).toBe("EVENT_FULL");
+    expect((await storedStatus(registrationId)).status).toBe("CANCELLED");
+  });
+
+  it("rejects re-registration with 409 DEADLINE_PASSED once the deadline has passed", async () => {
+    const registration = await insertRegistration(
+      expiredEventId,
+      student1Id,
+      RegistrationStatus.CANCELLED,
+      "21"
+    );
+    const before = await storedStatus(registration.id);
+
+    const res = await request(app)
+      .post(`/api/events/${expiredEventId}/registrations`)
+      .set("Cookie", student1Cookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("DEADLINE_PASSED");
+    expect(await storedStatus(registration.id)).toEqual(before);
   });
 });

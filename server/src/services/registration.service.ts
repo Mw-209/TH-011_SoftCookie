@@ -66,6 +66,22 @@ export function assertRegistrationEligible({
   }
 }
 
+export interface CancellationInput {
+  status: RegistrationStatus | "REGISTERED" | "ATTENDED" | "CANCELLED";
+  registrationDeadline: Date;
+  now?: Date;
+}
+
+/**
+ * Pure evaluation of the cancellation rules (F-06 3.2): only a REGISTERED row
+ * may be cancelled (BR-08, BR-09), and only until the registration deadline
+ * (BR-06). The state is checked first, so an already cancelled or attended
+ * record reports INVALID_STATE_TRANSITION even after the deadline.
+ */
+export function assertCancellationEligible(_input: CancellationInput): void {
+  // TDD RED stub: not yet implemented.
+}
+
 export interface PublicRegistration {
   id: string;
   registrationNumber: string;

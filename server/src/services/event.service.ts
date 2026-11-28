@@ -195,6 +195,33 @@ export function validateEventInput(body: unknown): ValidatedEventInput {
   };
 }
 
+/** Fields an owning organizer may change after publication (F-05, FR-07). */
+export interface EventUpdateInput {
+  capacity?: number;
+  registrationDeadline?: Date;
+}
+
+/**
+ * Validates a PATCH /api/events/:id payload against BR-01 (F-05 3.2).
+ * `startAt` is the stored event start, because the deadline must stay on or
+ * before it and the start itself is not editable.
+ */
+export function validateEventUpdateInput(
+  _body: unknown,
+  _context: { startAt: Date }
+): EventUpdateInput {
+  // TDD RED stub: not yet implemented.
+  return {};
+}
+
+/** BR-07: capacity may never drop below the seats already taken. */
+export function assertCapacityFloor(
+  _newCapacity: number,
+  _activeCount: number
+): void {
+  // TDD RED stub: not yet implemented.
+}
+
 type EventWithCounts = Event & {
   organizer: { name: string };
   _count: { registrations: number };

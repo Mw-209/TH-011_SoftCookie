@@ -66,6 +66,38 @@ export function assertRegistrationEligible({
   }
 }
 
+export interface CancellationInput {
+  status: RegistrationStatus | "REGISTERED" | "ATTENDED" | "CANCELLED";
+  registrationDeadline: Date;
+  now?: Date;
+}
+
+/**
+ * Pure evaluation of the cancellation rules (F-06 3.2): only a REGISTERED row
+ * may be cancelled (BR-08, BR-09), and only until the registration deadline
+ * (BR-06). The state is checked first, so an already cancelled or attended
+ * record reports INVALID_STATE_TRANSITION even after the deadline.
+ */
+export function assertCancellationEligible({
+  status,
+  registrationDeadline,
+  now = new Date(),
+}: CancellationInput): void {
+  if (status !== RegistrationStatus.REGISTERED) {
+    throw ApiError.invalidStateTransition(
+      status === RegistrationStatus.ATTENDED
+        ? "An attended registration cannot be cancelled."
+        : "This registration is already cancelled."
+    );
+  }
+
+  assertBeforeDeadline(
+    registrationDeadline,
+    now,
+    "The registration deadline for this event has passed, so it can no longer be cancelled."
+  );
+}
+
 export interface PublicRegistration {
   id: string;
   registrationNumber: string;
@@ -73,6 +105,9 @@ export interface PublicRegistration {
   participantId: string;
   status: RegistrationStatus;
   registeredAt: string;
+  /** Additive in Sprint 2 (F-06, F-07); null until the transition happens. */
+  cancelledAt: string | null;
+  checkedInAt: string | null;
 }
 
 export function toPublicRegistration(
@@ -85,6 +120,8 @@ export function toPublicRegistration(
     participantId: registration.participantId,
     status: registration.status,
     registeredAt: registration.registeredAt.toISOString(),
+    cancelledAt: registration.cancelledAt?.toISOString() ?? null,
+    checkedInAt: registration.checkedInAt?.toISOString() ?? null,
   };
 }
 
@@ -99,6 +136,8 @@ export interface RegistrationWithEvent extends PublicRegistration {
     location: string;
     startAt: string;
     endAt: string;
+    /** Additive in Sprint 2 (F-06): lets the UI offer Cancel only while open. */
+    registrationDeadline: string;
   };
 }
 
@@ -113,6 +152,7 @@ const registrationWithEventInclude = {
       location: true,
       startAt: true,
       endAt: true,
+      registrationDeadline: true,
     },
   },
 } satisfies Prisma.RegistrationInclude;
@@ -127,6 +167,7 @@ type RegistrationRow = Registration & {
     location: string;
     startAt: Date;
     endAt: Date;
+    registrationDeadline: Date;
   };
 };
 
@@ -137,6 +178,7 @@ function toRegistrationWithEvent(row: RegistrationRow): RegistrationWithEvent {
       ...row.event,
       startAt: row.event.startAt.toISOString(),
       endAt: row.event.endAt.toISOString(),
+      registrationDeadline: row.event.registrationDeadline.toISOString(),
     },
   };
 }
@@ -218,7 +260,7 @@ export async function registerForEvent(
           }),
           tx.registration.findUnique({
             where: { eventId_participantId: { eventId, participantId } },
-            select: { status: true },
+            select: { id: true, status: true },
           }),
         ]);
 
@@ -227,6 +269,31 @@ export async function registerForEvent(
           activeCount,
           existingStatus: existing?.status ?? null,
         });
+
+        const remainingSeats = calculateRemainingSeats(
+          Number(capacity),
+          activeCount + 1
+        );
+
+        // Re-registration (F-06, BR-08, DEC-02): the (eventId, participantId)
+        // pair is unique, so a participant who cancelled gets their original
+        // row back with the same registration number instead of a new insert.
+        // Inserting would hit the unique index and fail with a 500.
+        if (existing?.status === RegistrationStatus.CANCELLED) {
+          const reactivated = await tx.registration.update({
+            where: { id: existing.id },
+            data: {
+              status: RegistrationStatus.REGISTERED,
+              cancelledAt: null,
+              registeredAt: new Date(),
+            },
+          });
+
+          return {
+            registration: toPublicRegistration(reactivated),
+            remainingSeats,
+          };
+        }
 
         const sequence = (await highestSequenceForYear(tx, year)) + attempt;
 
@@ -242,10 +309,7 @@ export async function registerForEvent(
 
         return {
           registration: toPublicRegistration(created),
-          remainingSeats: calculateRemainingSeats(
-            Number(capacity),
-            activeCount + 1
-          ),
+          remainingSeats,
         };
       });
     } catch (error) {
@@ -261,6 +325,76 @@ export async function registerForEvent(
     "INTERNAL_ERROR",
     "Could not allocate a registration number. Please try again."
   );
+}
+
+/**
+ * Cancels the participant's own registration and releases its seat (F-06,
+ * FR-09, BR-08).
+ *
+ * Checks run in this order: unknown registration (404), not the owner (403),
+ * then, under the event row lock, wrong state (409 INVALID_STATE_TRANSITION)
+ * and past deadline (409 DEADLINE_PASSED).
+ *
+ * The parent event row is locked with SELECT ... FOR UPDATE, the same lock
+ * registerForEvent and updateEvent take, and the registration's status is read
+ * again under that lock. Two simultaneous cancel clicks therefore run one after
+ * the other: the second sees CANCELLED and is rejected instead of cancelling
+ * twice, and the remainingSeats returned is counted after the change.
+ */
+export async function cancelRegistration(
+  registrationId: string,
+  participantId: string
+): Promise<RegistrationResult> {
+  const prisma = getPrisma();
+
+  return prisma.$transaction(async (tx) => {
+    const found = await tx.registration.findUnique({
+      where: { id: registrationId },
+      select: { participantId: true, eventId: true },
+    });
+
+    if (!found) {
+      throw ApiError.notFound("Registration");
+    }
+
+    if (found.participantId !== participantId) {
+      throw ApiError.forbiddenOwnership();
+    }
+
+    const locked = await tx.$queryRaw<
+      Array<{ capacity: number; registrationDeadline: Date }>
+    >`
+      SELECT capacity, "registrationDeadline" FROM events WHERE id = ${found.eventId} FOR UPDATE
+    `;
+    const { capacity, registrationDeadline } = locked[0];
+
+    const current = await tx.registration.findUniqueOrThrow({
+      where: { id: registrationId },
+      select: { status: true },
+    });
+
+    assertCancellationEligible({
+      status: current.status,
+      registrationDeadline: new Date(registrationDeadline),
+    });
+
+    const cancelled = await tx.registration.update({
+      where: { id: registrationId },
+      data: { status: RegistrationStatus.CANCELLED, cancelledAt: new Date() },
+    });
+
+    const activeCount = await tx.registration.count({
+      where: {
+        eventId: found.eventId,
+        status: { in: [...ACTIVE_REGISTRATION_STATUSES] },
+      },
+    });
+
+    return {
+      registration: toPublicRegistration(cancelled),
+      remainingSeats: calculateRemainingSeats(Number(capacity), activeCount),
+    };
+  });
 }
 
 /**

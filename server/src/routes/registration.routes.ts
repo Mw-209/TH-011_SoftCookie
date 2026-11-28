@@ -1,12 +1,13 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import {
+  cancelRegistration,
   getOwnedRegistration,
   listMyRegistrations,
 } from "../services/registration.service.js";
 
 /**
- * Participant-owned registration reads (F-03 7.2).
+ * Participant-owned registration reads (F-03 7.2) and cancellation (F-06 3.2).
  * Mounted at /api/registrations.
  */
 export const registrationRouter = Router();
@@ -38,6 +39,20 @@ registrationRouter.get(
         req.currentUser!.id
       );
       res.status(200).json({ data: { registration } });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /api/registrations/:id/cancel — owner only (F-06 3.2, BR-04, BR-05)
+registrationRouter.post(
+  "/:id/cancel",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // The body is ignored: identity comes from the session (BR-04).
+      const result = await cancelRegistration(req.params.id, req.currentUser!.id);
+      res.status(200).json({ data: result });
     } catch (error) {
       next(error);
     }

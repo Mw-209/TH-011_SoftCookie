@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  cancelRegistration,
   fetchMyRegistrations,
   type Registration,
 } from "../api/registrations";
+import { ApiClientError } from "../api/client";
 import { SKILL_CATEGORY_LABELS } from "../api/events";
-import { formatDateTime, formatEventDate } from "../lib/datetime";
+import {
+  formatDateTime,
+  formatEventDate,
+  isRegistrationClosed,
+} from "../lib/datetime";
 
 function StatusBadge({ status }: { status: Registration["status"] }) {
+  // CANCELLED uses the theme's amber pairing (#FEF3C7 / #9A3412, F-06 3.3).
   const palette =
     status === "CANCELLED"
-      ? "bg-cookie-readonlyBg text-cookie-cocoa/60"
+      ? "bg-cookie-warningBg text-cookie-warningText"
       : "bg-cookie-successBg text-cookie-successText";
 
   return (
@@ -27,6 +34,64 @@ export default function MyRegistrationsPage() {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  // Separate from the load error, so a rejected cancel keeps the list visible.
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  /** Cancel is offered only for a held seat while registration is open (F-06). */
+  function canCancel(registration: Registration): boolean {
+    return (
+      registration.status === "REGISTERED" &&
+      !isRegistrationClosed(registration.event.registrationDeadline)
+    );
+  }
+
+  async function handleCancel(registration: Registration) {
+    setActionError(null);
+    setCancellingId(registration.id);
+
+    try {
+      const result = await cancelRegistration(registration.id);
+      setRegistrations((current) =>
+        current
+          ? current.map((row) =>
+              row.id === registration.id
+                ? {
+                    ...row,
+                    status: result.registration.status,
+                    cancelledAt: result.registration.cancelledAt,
+                  }
+                : row
+            )
+          : current
+      );
+    } catch (caught) {
+      // e.g. DEADLINE_PASSED when the deadline passed just before the click.
+      setActionError(
+        caught instanceof ApiClientError
+          ? caught.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
+  function renderCancelButton(registration: Registration) {
+    if (!canCancel(registration)) return null;
+    const busy = cancellingId === registration.id;
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleCancel(registration)}
+        disabled={busy}
+        className="whitespace-nowrap rounded border border-cookie-errorText/40 bg-cookie-surface px-3 py-1.5 text-xs font-medium text-cookie-errorText transition-colors hover:bg-cookie-errorBg disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {busy ? "Cancelling..." : "Cancel Registration"}
+      </button>
+    );
+  }
 
   useEffect(() => {
     let active = true;
@@ -63,6 +128,15 @@ export default function MyRegistrationsPage() {
           className="rounded border border-cookie-errorText/30 bg-cookie-errorBg px-4 py-3 text-sm font-medium text-cookie-errorText"
         >
           {error}
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          role="alert"
+          className="mb-4 rounded border border-cookie-errorText/30 bg-cookie-errorBg px-4 py-3 text-sm font-medium text-cookie-errorText"
+        >
+          {actionError}
         </div>
       )}
 
@@ -123,6 +197,9 @@ export default function MyRegistrationsPage() {
                   <th scope="col" className="px-4 py-3">
                     Registered
                   </th>
+                  <th scope="col" className="px-4 py-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -159,9 +236,17 @@ export default function MyRegistrationsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={registration.status} />
+                      {registration.cancelledAt && (
+                        <span className="mt-1 block text-xs text-cookie-cocoa/70">
+                          Cancelled {formatDateTime(registration.cancelledAt)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-cookie-cocoa/80">
                       {formatDateTime(registration.registeredAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {renderCancelButton(registration)}
                     </td>
                   </tr>
                 ))}
@@ -210,7 +295,19 @@ export default function MyRegistrationsPage() {
                       {formatDateTime(registration.registeredAt)}
                     </dd>
                   </div>
+                  {registration.cancelledAt && (
+                    <div>
+                      <dt className="inline font-medium">Cancelled: </dt>
+                      <dd className="inline">
+                        {formatDateTime(registration.cancelledAt)}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
+
+                {canCancel(registration) && (
+                  <div className="mt-3">{renderCancelButton(registration)}</div>
+                )}
 
                 <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-cookie-border pt-3 text-xs text-cookie-cocoa/70">
                   <span className="font-mono">

@@ -144,9 +144,9 @@ export default function EventDetailPage() {
 
           <RegistrationPanel
             event={event}
-            onRegistered={(remainingSeats) =>
-              // Reflect the claimed seat without a second fetch; the server
-              // already returned the authoritative figure.
+            onSeatsChanged={(remainingSeats) =>
+              // Reflect a claimed or released seat without a second fetch; the
+              // server already returned the authoritative figure.
               setEvent((current) =>
                 current
                   ? {
